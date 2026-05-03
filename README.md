@@ -16,3 +16,11 @@ InsuranceProvider => Patient: Mai mulți pacienți pot fi arondați aceluiași f
 Relații @ManyToMany
 MedicalService => InsuranceProvider: Implementată prin tabelul de joncțiune SERVICE_INSURANCE_COVERAGE. Un serviciu medical poate fi acoperit de mai mulți asiguratori, iar un asigurator poate acoperi o gamă largă de servicii.
 MedicalService => SubscriptionPlan: Implementată prin SERVICE_SUBSCRIPTION_PLAN. Modelează ofertele de tip abonament unde un plan include mai multe servicii, iar un serviciu poate face parte din pachete diferite.
+
+Diagrama ER
+<img width="967" height="653" alt="image" src="https://github.com/user-attachments/assets/6bfe2178-60d7-4190-9c50-237f974c9171" />
+
+Diagrama conceptuala 
+<img width="975" height="970" alt="image" src="https://github.com/user-attachments/assets/3e452899-61fa-4d6d-b37c-047688b51320" />
+
+
