@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: management
+  profiles:
+    active: test
+
+server:
+  servlet:
+    session:
+      cookie:
+        same-site: lax
+        path: /
+        http-only: true

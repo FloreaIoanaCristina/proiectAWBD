@@ -1,0 +1,27 @@
+2026-06-13 00:02:57 [HikariPool-1 housekeeper] WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=3h24s230ms666µs400ns).
+2026-06-13 14:43:16 [HikariPool-1 housekeeper] WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=14h40m33s979ms400µs100ns).
+2026-06-13 14:43:42 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/medical-services
+2026-06-13 14:43:42 [http-nio-8080-exec-4] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/appointments/doctor/1?page=0&size=5&sort=appointmentFrom,asc
+2026-06-13 14:43:42 [http-nio-8080-exec-2] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2026-06-13 14:43:42 [http-nio-8080-exec-2] DEBUG o.s.s.w.s.SessionManagementFilter - Request requested invalid session id 053554F6A3C424F00DE0B84F91DEE813
+2026-06-13 14:43:42 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/medical-services
+2026-06-13 14:43:42 [http-nio-8080-exec-4] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2026-06-13 14:43:42 [http-nio-8080-exec-4] DEBUG o.s.s.w.s.SessionManagementFilter - Request requested invalid session id 053554F6A3C424F00DE0B84F91DEE813
+2026-06-13 14:43:42 [http-nio-8080-exec-3] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/appointments/doctor/1?page=0&size=5&sort=appointmentFrom,asc
+2026-06-13 14:43:42 [http-nio-8080-exec-3] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2026-06-13 14:43:42 [http-nio-8080-exec-3] DEBUG o.s.s.w.s.SessionManagementFilter - Request requested invalid session id 053554F6A3C424F00DE0B84F91DEE813
+2026-06-13 14:43:42 [http-nio-8080-exec-2] INFO  c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda MedicalServiceService.getAllServices() cu argumentele: []
+2026-06-13 14:43:42 [http-nio-8080-exec-2] DEBUG c.u.m.services.MedicalServiceService - Se preia lista completă a serviciilor medicale.
+2026-06-13 14:43:42 [http-nio-8080-exec-2] INFO  c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda MedicalServiceService.getAllServices() s-a finalizat cu succes. Rezultat returnat: [com.unibuc.management.entities.MedicalService@1112ca0f, com.unibuc.management.entities.MedicalService@309a49ba, com.unibuc.management.entities.MedicalService@7f3727b2]
+2026-06-13 14:43:43 [http-nio-8080-exec-5] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/medical-services
+2026-06-13 14:43:43 [http-nio-8080-exec-5] DEBUG o.s.s.w.a.AnonymousAuthenticationFilter - Set SecurityContextHolder to anonymous SecurityContext
+2026-06-13 14:43:43 [http-nio-8080-exec-5] DEBUG o.s.s.w.s.SessionManagementFilter - Request requested invalid session id 053554F6A3C424F00DE0B84F91DEE813
+2026-06-13 14:43:43 [http-nio-8080-exec-5] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/medical-services
+2026-06-13 14:43:43 [http-nio-8080-exec-5] INFO  c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda MedicalServiceService.getAllServices() cu argumentele: []
+2026-06-13 14:43:43 [http-nio-8080-exec-5] DEBUG c.u.m.services.MedicalServiceService - Se preia lista completă a serviciilor medicale.
+2026-06-13 14:43:43 [http-nio-8080-exec-5] INFO  c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda MedicalServiceService.getAllServices() s-a finalizat cu succes. Rezultat returnat: [com.unibuc.management.entities.MedicalService@39c134ab, com.unibuc.management.entities.MedicalService@6667fbab, com.unibuc.management.entities.MedicalService@6a3875c6]
+2026-06-13 14:55:56 [SpringApplicationShutdownHook] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-06-13 14:55:56 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-06-13 14:55:56 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-06-13 14:55:56 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-06-13 14:55:56 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
