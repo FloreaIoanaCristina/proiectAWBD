@@ -9,19 +9,18 @@ import java.time.LocalDate;
 public class PaymentRequestDTO {
 
     @NotNull(message = "Suma de plată este obligatorie.")
-    @DecimalMin(value = "0.01", message = "Suma de plată trebuie să fie strict mai mare decât 0.")
+    @DecimalMin(value = "0.00", message = "Suma de plată nu poate fi negativă.")
     private Double amount;
 
-    @NotBlank(message = "Metoda de plată este obligatorie.")
-    @Pattern(regexp = "^(Card|Cash)$", message = "Metoda de plată poate fi doar Card sau Cash")
+    @Pattern(regexp = "^(Card|Cash)$", message = "Metoda de plată poate fi doar Card sau Cash.")
     private String paymentMethod;
 
-    @NotNull(message = "Data plății este obligatorie.")
     private LocalDate paymentDate;
 
     @NotNull(message = "ID-ul programării este obligatoriu.")
     private Integer appointmentId;
 
-    @NotNull(message = "ID-ul tipului de plată este obligatoriu.")
-    private Integer paymentTypeId;
+    @NotBlank(message = "Statusul tranzacției este obligatoriu.")
+    @Pattern(regexp = "^(PENDING|COMPLETED)$", message = "Statusul poate fi doar PENDING sau COMPLETED.")
+    private String status;
 }

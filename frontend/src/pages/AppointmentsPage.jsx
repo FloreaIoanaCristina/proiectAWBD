@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { appointmentService, medicalServiceService, patientService } from '../services/api';
-import { Calendar, Clock, User, UserCog, Trash2, Edit2, PlusCircle, AlertCircle, ArrowUpDown } from 'lucide-react';
+import { Calendar, Clock, User, Trash2, Edit2, PlusCircle, AlertCircle, ArrowUpDown, Star } from 'lucide-react';
 
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState([]);
@@ -16,11 +16,19 @@ export default function AppointmentsPage() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [hoverRating, setHoverRating] = useState(0);
+
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   
   const [patientId, setPatientId] = useState('');
   const [medicalServiceId, setMedicalServiceId] = useState('');
-  const [createDate, setCreateDate] = useState('');
+
+  const [selectedDate, setSelectedDate] = useState('');
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [selectedSlot, setSelectedSlot] = useState('');
 
   const [editDate, setEditDate] = useState('');
 
@@ -29,12 +37,12 @@ export default function AppointmentsPage() {
 
   const [patientNamePreview, setPatientNamePreview] = useState('');
   const [isSearchingPatient, setIsSearchingPatient] = useState(false);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 
   const currentUser = useMemo(() => JSON.parse(localStorage.getItem('med_user')), []);
-  console.log(currentUser);
+  const isPatient = currentUser?.role === 'PATIENT';
 
   const fetchAppointments = useCallback(async () => {
-
     if (!currentUser) return;
 
     const { role, profileId } = currentUser;
@@ -50,7 +58,7 @@ export default function AppointmentsPage() {
       if (currentUser.role === 'DOCTOR') {
         response = await appointmentService.getByDoctorId(profileId, params);
       } else {
-        response = await appointmentService.getByPatientId(profileId);
+        response = await appointmentService.getByPatientId(profileId, params);
       }
       setAppointments(response.data.content || []);
       setTotalPages(response.data.totalPages || 0);
@@ -115,14 +123,44 @@ export default function AppointmentsPage() {
 
   const selectedService = medicalServices.find(s => s.id === parseInt(medicalServiceId));
 
-if (selectedService && selectedService.medicalServiceDoctors) {
-    setFilteredDoctors(selectedService.medicalServiceDoctors);
-  } else {
-    setFilteredDoctors([]);
-  }
-  
-  setDoctorId(''); 
-}, [medicalServiceId, medicalServices]);
+    if (selectedService && selectedService.medicalServiceDoctors) {
+      setFilteredDoctors(selectedService.medicalServiceDoctors);
+    } else {
+      setFilteredDoctors([]);
+    }
+    
+    setDoctorId('');
+    setSelectedDate('');
+    setAvailableSlots([]);
+    setSelectedSlot('');
+  }, [medicalServiceId, medicalServices]);
+
+  useEffect(() => {
+    if (!medicalServiceId || !selectedDate) {
+      setAvailableSlots([]);
+      setSelectedSlot('');
+      return;
+    }
+
+    const loadSlots = async () => {
+      setIsLoadingSlots(true);
+      setError('');
+      try {
+        const response = await appointmentService.getAvailableSlots(
+          medicalServiceId,
+          selectedDate,
+          doctorId || null
+        );
+        setAvailableSlots(response.data || []);
+      } catch (err) {
+        setError('Nu s-au putut prelua intervalele orare pentru data selectată.');
+      } finally {
+        setIsLoadingSlots(false);
+      }
+    };
+
+    loadSlots();
+  }, [medicalServiceId, doctorId, selectedDate]);
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
@@ -132,17 +170,12 @@ if (selectedService && selectedService.medicalServiceDoctors) {
     const isUserPatient = currentUser.role === 'PATIENT';
 
     if (!isUserPatient && !patientId) {
-      setError('ID-ul pacientului este obligatoriu pentru personalul medical.');
+      setError('ID-ul pacientului este obligatoriu.');
       return;
     }
 
-    if (!medicalServiceId || !createDate) {
-      setError('Toate câmpurile sunt obligatorii.');
-      return;
-    }
-
-    if (new Date(createDate) < new Date()) {
-      setError('Nu puteți face o programare în trecut.');
+    if (!medicalServiceId || !selectedDate || !selectedSlot) {
+      setError('Toate câmpurile, inclusiv selectarea unui interval orar, sunt obligatorii.');
       return;
     }
 
@@ -151,7 +184,7 @@ if (selectedService && selectedService.medicalServiceDoctors) {
         patientId: isUserPatient ?  null : parseInt(patientId),
         medicalServiceId: parseInt(medicalServiceId),
         doctorId: doctorId ? parseInt(doctorId) : null,
-        appointmentFrom: new Date(createDate).toISOString()
+        appointmentFrom: selectedSlot
       };
 
       const response = await appointmentService.create(payload);
@@ -159,10 +192,12 @@ if (selectedService && selectedService.medicalServiceDoctors) {
       setShowCreateModal(false);
       setPatientId('');
       setMedicalServiceId('');
-      setCreateDate('');
+      setDoctorId('');
+      setSelectedDate('');
+      setSelectedSlot('');
       fetchAppointments();
     } catch (err) {
-      setError(err.response?.data?.message || 'Eroare la crearea programării. Verificați sloturile disponibile.');
+      setError(err.response?.data?.message || 'Eroare la crearea programării.');
     }
   };
 
@@ -186,6 +221,8 @@ if (selectedService && selectedService.medicalServiceDoctors) {
       
       setSuccess('Programarea a fost mutată cu succes!');
       setShowEditModal(false);
+      setSelectedSlot('');
+      setSelectedDate('');
       fetchAppointments();
     } catch (err) {
       setError(err.response?.data?.message || 'Intervalul orar selectat nu este disponibil.');
@@ -204,6 +241,36 @@ if (selectedService && selectedService.medicalServiceDoctors) {
     } catch (err) {
       setError(err.response?.data?.message || 'Nu s-a putut anula programarea.');
     }
+  };
+
+  const handleFeedbackSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      await appointmentService.submitFeedback(selectedAppointment.id, feedbackRating);
+      setSuccess(`Feedback-ul pentru programarea #${selectedAppointment.id} a fost trimis cu succes!`);
+      setShowFeedbackModal(false);
+      fetchAppointments();
+    } catch (err) {
+      setError(err.response?.data || 'Eroare la trimiterea feedback-ului.');
+    }
+  };
+
+  const canSubmitFeedback = (app) => {
+    if (!isPatient) return false;
+    if (app.status?.toLowerCase() === 'completed') return false;
+
+    const appointmentStartTime = new Date(app.appointmentFrom).getTime();
+    const thirtyMinutesInMs = 30 * 60 * 1000;
+    const now = new Date().getTime();
+
+    return now > (appointmentStartTime + thirtyMinutesInMs);
+  };
+
+  const formatTimeLabel = (isoString) => {
+    return new Date(isoString).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
@@ -247,6 +314,7 @@ if (selectedService && selectedService.medicalServiceDoctors) {
               <th className="py-4 px-6 cursor-pointer hover:bg-gray-100" onClick={() => handleSort('appointmentFrom')}>
                 <div className="flex items-center gap-1">Data & Ora <ArrowUpDown size={14} /></div>
               </th>
+              <th className="py-4 px-6 text-center">Status / Evaluare</th>
               <th className="py-4 px-6 text-center">Acțiuni</th>
             </tr>
           </thead>
@@ -270,37 +338,65 @@ if (selectedService && selectedService.medicalServiceDoctors) {
                       </span>
                       <span className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
                         <Clock size={14} />
-                        {new Date(app.appointmentFrom).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}
+                        {formatTimeLabel(app.appointmentFrom)}
                       </span>
                     </div>
                   </td>
-                  <td className="py-4 px-6">
-                    <div className="flex justify-center items-center gap-3">
-                      <button 
+                  
+                  <td className="py-4 px-6 text-center">
+                    {app.status?.toLowerCase() === 'completed' ? (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                        Finalizată / Evaluată
+                      </span>
+                    ) : canSubmitFeedback(app) ? (
+                      <button
                         onClick={() => {
                           setSelectedAppointment(app);
-                          setEditDate(app.appointmentFrom.substring(0, 16)); 
-                          setShowEditModal(true);
+                          setFeedbackRating(5);
+                          setShowFeedbackModal(true);
                         }}
-                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Reschedule / Reprogramare"
+                        className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-xl"
                       >
-                        <Edit2 size={16} />
+                        Acordă Feedback
                       </button>
-                      <button 
-                        onClick={() => handleDelete(app.id)}
-                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Anulează Programarea"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                        Programată
+                      </span>
+                    )}
+                  </td>
+
+                  <td className="py-4 px-6">
+                    <div className="flex justify-center items-center gap-3">
+                      {app.status?.toLowerCase() !== 'completed' && (
+                        <>
+                          <button 
+                            onClick={() => {
+                              setSelectedAppointment(app);
+                              setEditDate(app.appointmentFrom.substring(0, 16)); 
+                              setShowEditModal(true);
+                            }}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Reschedule / Reprogramare"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(app.id)}
+                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Anulează Programarea"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="py-8 text-center text-gray-400 bg-gray-50/20">
+                <td colSpan="6" className="py-8 text-center text-gray-400 bg-gray-50/20">
                   Nu există programări înregistrate pentru acest cont sau această pagină.
                 </td>
               </tr>
@@ -338,7 +434,7 @@ if (selectedService && selectedService.medicalServiceDoctors) {
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Planifică o Programare Nouă</h3>
             <form onSubmit={handleCreateSubmit} className="space-y-4">
-              {currentUser.role !== 'PATIENT' && (
+              {!isPatient && (
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase mb-1">ID Pacient</label>
                   <input 
@@ -383,7 +479,7 @@ if (selectedService && selectedService.medicalServiceDoctors) {
                   {!medicalServiceId ? (
                     <option value="">Selectați mai întâi un serviciu...</option>
                   ) : filteredDoctors.length === 0 ? (
-                    <option value="">Nu există medici disponibili pentru acest serviciu</option>
+                    <option value="">Serviciu fără alocare de medic obligatoriu</option>
                   ) : (
                     <>
                       <option value="">Alegeți medicul...</option>
@@ -396,15 +492,52 @@ if (selectedService && selectedService.medicalServiceDoctors) {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Data și Ora</label>
+                <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Alege Ziua</label>
                 <input 
-                  type="datetime-local"
+                  type="date"
+                  min={new Date().toISOString().split('T')[0]} 
                   className="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
-                  value={createDate}
-                  onChange={(e) => setCreateDate(e.target.value)}
+                  value={selectedDate}
+                  onChange={(e) => { setSelectedDate(e.target.value); setSelectedSlot(''); }}
+                  disabled={!medicalServiceId}
                   required
                 />
               </div>
+
+              {selectedDate && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-2 flex items-center gap-1">
+                    <Clock size={14} /> Ore disponibile pentru data selectată
+                  </label>
+                  {isLoadingSlots ? (
+                    <p className="text-xs text-gray-400 animate-pulse">Se calculează disponibilitatea sloturilor...</p>
+                  ) : availableSlots.length === 0 ? (
+                    <p className="text-xs text-red-500 font-medium bg-red-50 p-2.5 rounded-lg">
+                      Ne pare rău, nu există ore libere sau medicul este în concediu pe această dată.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2">
+                      {availableSlots.map((slotIso) => {
+                        const isSelected = selectedSlot === slotIso;
+                        return (
+                          <button
+                            key={slotIso}
+                            type="button"
+                            onClick={() => setSelectedSlot(slotIso)}
+                            className={`py-2 px-1 text-xs font-semibold rounded-lg border text-center transition-all ${
+                              isSelected 
+                                ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm ring-2 ring-indigo-300' 
+                                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
+                            }`}
+                          >
+                            {formatTimeLabel(slotIso)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-2">
                 <button 
@@ -457,6 +590,65 @@ if (selectedService && selectedService.medicalServiceDoctors) {
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-colors"
                 >
                   Salvează Schimbările
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showFeedbackModal && selectedAppointment && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Evaluare Serviciu Medical</h3>
+            <p className="text-xs text-gray-500 mb-4">
+              Cum evaluezi serviciul <strong className="text-indigo-600">{selectedAppointment.medicalService?.name}</strong>?
+            </p>
+            
+            <form onSubmit={handleFeedbackSubmit} className="space-y-6">
+              <div className="flex flex-col items-center justify-center gap-2">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Atinge pentru a oferi stele</label>
+                
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => {
+                    const isFilled = star <= (hoverRating || feedbackRating);
+                    return (
+                      <button
+                        type="button"
+                        key={star}
+                        onClick={() => setFeedbackRating(star)}
+                        onMouseEnter={() => setHoverRating(star)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        className="p-1 transition-transform hover:scale-125 focus:outline-none"
+                      >
+                        <Star
+                          size={32}
+                          className={`transition-colors ${
+                            isFilled ? 'fill-amber-400 text-amber-400' : 'text-gray-300'
+                          }`}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+                <span className="text-sm font-bold text-gray-700 mt-1">
+                  {feedbackRating} din 5 Stele
+                </span>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setShowFeedbackModal(false)} 
+                  className="px-4 py-2 border rounded-xl hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors"
+                >
+                  Anulare
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md transition-colors"
+                >
+                  Trimite Recenzia
                 </button>
               </div>
             </form>

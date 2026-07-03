@@ -11,7 +11,6 @@ import java.util.Set;
 @Entity
 @Table(name = "PATIENT")
 @Access(AccessType.FIELD)
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Patient {
 
     @Id

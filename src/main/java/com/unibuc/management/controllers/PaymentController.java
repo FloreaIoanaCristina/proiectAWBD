@@ -33,8 +33,14 @@ public class PaymentController {
         return ResponseEntity.ok(paymentService.getPaymentById(id));
     }
 
+    @GetMapping("/patient/{patientId}")
+    @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
+    public ResponseEntity<List<Payment>> getByPatientId(@PathVariable Long patientId) {
+        return ResponseEntity.ok(paymentService.getPaymentsByPatientId(patientId));
+    }
+
     @PostMapping
-    @PreAuthorize("hasRole('PATIENT')")
+    @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
     public ResponseEntity<Payment> create(@Valid @RequestBody PaymentRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.savePayment(dto));
     }

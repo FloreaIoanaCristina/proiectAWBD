@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { doctorService } from '../services/api';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { doctorService, medicalServiceService } from '../services/api';
 import { UserCog, ShieldAlert, PlusCircle, Edit2, Trash2, ArrowUpDown, Briefcase } from 'lucide-react';
 
 export default function DoctorsPage() {
@@ -18,8 +18,20 @@ export default function DoctorsPage() {
   const [name, setName] = useState('');
   const [office, setOffice] = useState('');
 
+  const [numberOfPtodays, setNumberOfPtodays] = useState(21);
+  const [medicalServiceId, setMedicalServiceId] = useState(''); 
+  const [medicalServices, setMedicalServices] = useState([]);
+
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const currentUser = useMemo(() => {
+    const savedUser = localStorage.getItem('med_user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  }, []);
+
+  const userRole = currentUser?.role ?? null;
+  const isPatient = userRole === 'ROLE_PATIENT' || userRole === 'PATIENT';
 
   const fetchDoctors = useCallback(async () => {
     try {
@@ -52,22 +64,47 @@ export default function DoctorsPage() {
     setPage(0);
   };
 
-  const openCreateModal = () => {
+  const loadMedicalServices = async (currentServiceId = null) => {
+    try {
+      const response = await medicalServiceService.getAll(); 
+      const servicesList = response.data.content || response.data || [];
+      setMedicalServices(servicesList);
+
+      if (!currentServiceId && servicesList.length > 0) {
+        setMedicalServiceId(servicesList[0].id);
+      } else if (currentServiceId) {
+        setMedicalServiceId(currentServiceId);
+      }
+    } catch (err) {
+      console.error("Nu s-au putut încărca serviciile medicale:", err);
+      setError("Eroare la încărcarea listei de servicii medicale.");
+    }
+  };
+
+  const openCreateModal = async() => {
+    if (isPatient) return;
     setIsEditMode(false);
     setSelectedId(null);
     setName('');
     setOffice('');
+    setNumberOfPtodays(21); 
+    setMedicalServiceId('');
     setError('');
     setShowModal(true);
+    await loadMedicalServices();
   };
 
-  const openEditModal = (doctor) => {
+  const openEditModal = async(doctor) => {
+    if (isPatient) return;
     setIsEditMode(true);
     setSelectedId(doctor.id);
     setName(doctor.name);
     setOffice(doctor.office || '');
+    setNumberOfPtodays(doctor.numberOfPtodays ?? 21);
+    setMedicalServiceId(doctor.medicalService?.id);
     setError('');
     setShowModal(true);
+    await loadMedicalServices(doctor.medicalService?.id);
   };
 
   const handleSubmit = async (e) => {
@@ -86,7 +123,9 @@ export default function DoctorsPage() {
 
     const payload = {
       name: name.trim(),
-      office: office.trim()
+      office: office.trim(),
+      numberOfPtodays: parseInt(numberOfPtodays) || 21,
+      medicalServiceId: parseInt(medicalServiceId)
     };
 
     try {
@@ -126,14 +165,16 @@ export default function DoctorsPage() {
           <p className="text-sm text-gray-500">Gestiune personal medical, cabinete alocate și disponibilități</p>
         </div>
         
-        <button 
-          onClick={openCreateModal}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
-        >
-          <PlusCircle size={18} />
-          Adaugă Medic
-        </button>
-      </div>
+        {!isPatient && (
+          <button 
+            onClick={openCreateModal}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+          >
+            <PlusCircle size={18} />
+            Adaugă Medic
+          </button>
+        )}
+      </div> 
 
       {error && (
         <div className="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded-xl flex items-center gap-2">
@@ -155,10 +196,15 @@ export default function DoctorsPage() {
               <th className="py-4 px-6 cursor-pointer hover:bg-gray-100" onClick={() => handleSort('name')}>
                 <div className="flex items-center gap-1">Nume Medic <ArrowUpDown size={14} /></div>
               </th>
+              <th className="py-4 px-6 text-center">
+                <div className="flex items-center gap-1">Serviciu Medical</div>
+              </th>
               <th className="py-4 px-6 cursor-pointer hover:bg-gray-100" onClick={() => handleSort('office')}>
                 <div className="flex items-center gap-1">Cabinet Locație <ArrowUpDown size={14} /></div>
               </th>
-              <th className="py-4 px-6 text-center">Acțiuni</th>
+              {!isPatient && (
+                <th className="py-4 px-6 text-center">Acțiuni</th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
@@ -172,30 +218,39 @@ export default function DoctorsPage() {
                       {doctor.name}
                     </div>
                   </td>
+                  <td className="py-4 px-6">
+                    <div className="flex flex-wrap gap-1">
+                      <span className="bg-indigo-50 text-indigo-700 text-xs font-semibold px-2.5 py-1 rounded-lg border border-indigo-100">
+                        {doctor.medicalService.name}
+                      </span>
+                    </div>
+                  </td>
                   <td className="py-4 px-6 text-gray-500">
                     <div className="flex items-center gap-1">
                       <Briefcase size={14} className="text-gray-400" />
                       {doctor.office || 'Nalocat'}
                     </div>
                   </td>
-                  <td className="py-4 px-6">
-                    <div className="flex justify-center items-center gap-3">
-                      <button 
-                        onClick={() => openEditModal(doctor)}
-                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Editează detalii medic"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(doctor.id)}
-                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Șterge medic"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
+                  {!isPatient && (
+                    <td className="py-4 px-6">
+                      <div className="flex justify-center items-center gap-3">
+                        <button 
+                          onClick={() => openEditModal(doctor)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Editează detalii medic"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(doctor.id)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Șterge medic"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (
@@ -263,6 +318,38 @@ export default function DoctorsPage() {
                   onChange={(e) => setOffice(e.target.value)}
                   required
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Zile Concediu (PTO)</label>
+                  <input 
+                    type="number"
+                    className="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
+                    value={numberOfPtodays}
+                    onChange={(e) => setNumberOfPtodays(e.target.value)}
+                    min="0"
+                    max="365"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Specializare / Serviciu</label>
+                  <select
+                    className="w-full px-3 py-2 border rounded-xl bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
+                    value={medicalServiceId}
+                    onChange={(e) => setMedicalServiceId(e.target.value)}
+                    required
+                  >
+                    <option value="" disabled>Selectează serviciul...</option>
+                    {medicalServices.map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">

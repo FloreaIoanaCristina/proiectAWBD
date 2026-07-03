@@ -53,15 +53,18 @@ public class AppointmentController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(appointmentService.createAppointment(authentication, dto));
     }
-    @GetMapping("/available-times")
-    public ResponseEntity<List<OffsetDateTime>> getAvailableTimeSlots(@RequestParam Integer medicalServiceId,
-                                                                      @RequestParam String date) {
-        
-        MedicalService medicalService = medicalServiceService.getMedicalServiceById(medicalServiceId);
 
-        List<OffsetDateTime> availableTimeSlots = appointmentService.getAvailableTimeSlots(medicalService, date);
+    @GetMapping("/available-times")
+    public ResponseEntity<List<OffsetDateTime>> getAvailableTimeSlots(
+            @RequestParam Integer medicalServiceId,
+            @RequestParam(required = false) Integer doctorId,
+            @RequestParam String date) {
+
+        MedicalService medicalService = medicalServiceService.getMedicalServiceById(medicalServiceId);
+        List<OffsetDateTime> availableTimeSlots = appointmentService.getAvailableTimeSlots(medicalService, doctorId, date);
         return ResponseEntity.ok(availableTimeSlots);
     }
+
     @GetMapping("/patient/{patientId}")
     @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
     public ResponseEntity<Page<Appointment>> getAppointmentsByPatientId(
@@ -159,8 +162,11 @@ public class AppointmentController {
         }
 
         MedicalService medicalService = appointment.getMedicalService();
+        Integer currentDoctorId = (appointment.getDoctor() != null) ? appointment.getDoctor().getId() : null;
+
         List<OffsetDateTime> availableSlots = appointmentService.getAvailableTimeSlots(
                 medicalService,
+                currentDoctorId,
                 appointmentFrom.toLocalDate().toString()
         );
 

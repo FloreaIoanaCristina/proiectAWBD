@@ -29,7 +29,7 @@ public class Doctor {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ID_MEDICAL_SERVICE", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "medicalServiceDoctors"})
     private MedicalService medicalService;
 
     @OneToMany(mappedBy = "doctor")

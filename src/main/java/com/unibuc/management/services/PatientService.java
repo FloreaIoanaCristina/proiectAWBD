@@ -6,6 +6,7 @@ import com.unibuc.management.entities.Patient;
 import com.unibuc.management.entities.User;
 import com.unibuc.management.exceptions.InvalidActionException;
 import com.unibuc.management.exceptions.ResourceNotFoundException;
+import com.unibuc.management.repositories.AppointmentRepository;
 import com.unibuc.management.repositories.InsuranceProviderRepository;
 import com.unibuc.management.repositories.PatientRepository;
 import com.unibuc.management.repositories.UserRepository;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,12 +29,14 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
     private final InsuranceProviderRepository insuranceProviderRepository;
+    private final AppointmentRepository appointmentRepository;
 
     @Autowired
-    public PatientService(PatientRepository patientRepository, UserRepository userRepository, InsuranceProviderRepository insuranceProviderRepository) {
+    public PatientService(PatientRepository patientRepository, UserRepository userRepository, InsuranceProviderRepository insuranceProviderRepository, AppointmentRepository appointmentRepository) {
         this.patientRepository = patientRepository;
         this.userRepository = userRepository;
         this.insuranceProviderRepository = insuranceProviderRepository;
+        this.appointmentRepository = appointmentRepository;
     }
     public Page<Patient> getAllPatientsPaged(Pageable pageable) {
         log.debug("Se preia lista paginată a pacienților.");
@@ -122,6 +126,27 @@ public class PatientService {
         log.debug("Se inițiază procedura de eliminare pentru pacientul cu ID-ul: {}", id);
         Patient patient = getPatientById(id);
         User user = patient.getUser();
+
+        long appointmentCount = appointmentRepository.countByPatientId(id);
+        if (appointmentCount > 0) {
+            throw new InvalidActionException("Nu se poate șterge pacientul deoarece are " + appointmentCount + " programări");
+        }
+
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+
+        boolean isDoctor = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"));
+        boolean isPatient = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_PATIENT"));
+
+        if (isPatient) {
+            if (user == null || !user.getUsername().equals(currentUsername)) {
+                throw new InvalidActionException("Nu aveți permisiunea să ștergeți profilul altui pacient.");
+            }
+        } else if (isDoctor) {
+            if (user != null) {
+                throw new InvalidActionException("Doctorii pot șterge doar pacienții fără cont de utilizator. Pacienții cu cont activ trebuie să își șteargă singuri contul.");
+            }
+        }
 
         patientRepository.delete(patient);
         log.info("Entitatea Patient cu ID-ul {} a fost ștearsă.", id);

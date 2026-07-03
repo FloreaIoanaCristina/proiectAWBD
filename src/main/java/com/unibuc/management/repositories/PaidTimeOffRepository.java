@@ -12,17 +12,12 @@ import java.util.List;
 @Repository
 public interface PaidTimeOffRepository extends JpaRepository<PaidTimeOff, Integer> {
 
-    @Query("""
-    SELECT p 
-    FROM PaidTimeOff p 
-    WHERE p.doctor.id = :doctorId 
-    AND (p.ptoFrom BETWEEN :start AND :end 
-         OR p.ptoTo BETWEEN :start AND :end)
-""")
-    List<PaidTimeOff> findByDoctorAndDate(
+    @Query("SELECT p FROM PaidTimeOff p WHERE p.doctor.id = :doctorId " +
+            "AND p.ptoFrom <= :endOfDay AND p.ptoTo >= :startOfDay")
+    List<PaidTimeOff> findActivePtoForDoctorInDay(
             @Param("doctorId") Integer doctorId,
-            @Param("start") OffsetDateTime start,
-            @Param("end") OffsetDateTime end
+            @Param("startOfDay") OffsetDateTime startOfDay,
+            @Param("endOfDay") OffsetDateTime endOfDay
     );
 
 }

@@ -74,7 +74,7 @@ public class AppointmentService {
         MedicalService medicalService = medicalServiceRepository.findById(dto.getMedicalServiceId())
                 .orElseThrow(() -> new EntityNotFoundException("Serviciul medical nu a fost găsit."));
 
-        List<OffsetDateTime> availableSlots = getAvailableTimeSlots(medicalService, dto.getAppointmentFrom().toLocalDate().toString());
+        List<OffsetDateTime> availableSlots = getAvailableTimeSlots(medicalService, dto.getDoctorId(), dto.getAppointmentFrom().toLocalDate().toString());
         boolean slotAvailable = availableSlots.stream().anyMatch(slot ->
                 slot.truncatedTo(ChronoUnit.MINUTES).equals(dto.getAppointmentFrom().truncatedTo(ChronoUnit.MINUTES))
         );
@@ -143,8 +143,8 @@ public class AppointmentService {
 
         log.info("Feedback salvat cu succes (rating: {}) pentru programarea ID {}. Status completat.", rating, appointmentId);
     }
-    public List<OffsetDateTime> getAvailableTimeSlots(MedicalService medicalService, String date) {
-        log.debug("Calculare sloturi orare disponibile pentru serviciul ID: {} în data de: {}", medicalService.getId(), date);
+    public List<OffsetDateTime> getAvailableTimeSlots(MedicalService medicalService, Integer doctorId, String date) {
+        log.debug("Calculare sloturi pentru serviciul ID: {}, Medic ID: {}, Data: {}", medicalService.getId(), doctorId, date);
 
         LocalDate selectedDate = LocalDate.parse(date);
         LocalDateTime startTime = LocalDateTime.of(selectedDate, LocalTime.of(medicalService.getStartHour(), 0));
@@ -152,31 +152,46 @@ public class AppointmentService {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
         ZoneOffset zoneOffset = ZoneOffset.UTC;
-
         OffsetDateTime startOfDay = selectedDate.atStartOfDay().atOffset(zoneOffset);
         OffsetDateTime endOfDay = selectedDate.atTime(LocalTime.MAX).atOffset(zoneOffset);
 
-        List<Appointment> existingAppointments = appointmentRepository.findByMedicalServiceAndDate(medicalService.getId(), startOfDay,endOfDay);
-        Optional<Doctor> doctorOptional = doctorRepository.findByMedicalServiceId(medicalService.getId());
-        List<PaidTimeOff> doctorPTOs = new ArrayList<PaidTimeOff>();
-        if (doctorOptional.isPresent()) {
-            Doctor doctor = doctorOptional.get();
-            doctorPTOs = ptoRepository.findByDoctorAndDate(doctor.getId(), startOfDay,endOfDay);
-            log.debug("S-au găsit {} perioade PTO active pentru doctorul ID: {}", doctorPTOs.size(), doctor.getId());
+        List<Appointment> existingAppointments = appointmentRepository.findByMedicalServiceAndDate(medicalService.getId(), startOfDay, endOfDay);
+
+        List<PaidTimeOff> doctorPTOs = new ArrayList<>();
+        if (doctorId != null) {
+            doctorPTOs = ptoRepository.findActivePtoForDoctorInDay(doctorId, startOfDay, endOfDay);
+            log.debug("S-au găsit {} perioade PTO active care acoperă data selectată pentru doctorul ID: {}", doctorPTOs.size(), doctorId);
         }
+
         List<OffsetDateTime> availableSlots = new ArrayList<>();
+
         while (startTime.isBefore(endTime)) {
             OffsetDateTime slot = startTime.atOffset(ZoneOffset.UTC);
 
             boolean isPastTime = slot.isBefore(now);
-            boolean isBlockedByPTO = doctorPTOs.stream().anyMatch(pto ->
-                    (!slot.isBefore(pto.getPtoFrom())) && slot.isBefore(pto.getPtoTo())
-            );
-            boolean hasAppointment = existingAppointments.stream().anyMatch(appt -> appt.getAppointmentFrom().equals(slot));
+
+            boolean isBlockedByPTO = false;
+            if (doctorId != null) {
+                isBlockedByPTO = doctorPTOs.stream().anyMatch(pto ->
+                        (slot.isEqual(pto.getPtoFrom()) || slot.isAfter(pto.getPtoFrom())) && slot.isBefore(pto.getPtoTo())
+                );
+            }
+
+            boolean hasAppointment = false;
+            if (doctorId != null) {
+                hasAppointment = existingAppointments.stream().anyMatch(appt ->
+                        appt.getDoctor() != null &&
+                                appt.getDoctor().getId().equals(doctorId) &&
+                                appt.getAppointmentFrom().equals(slot)
+                );
+            } else {
+                hasAppointment = existingAppointments.stream().anyMatch(appt -> appt.getAppointmentFrom().equals(slot));
+            }
 
             if (!isPastTime && !isBlockedByPTO && !hasAppointment) {
                 availableSlots.add(slot);
             }
+
             startTime = startTime.plusMinutes(30);
         }
 

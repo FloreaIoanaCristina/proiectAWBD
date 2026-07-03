@@ -13,3 +13,19 @@ body {
   width: 100%;
 }
 
+.fc .fc-button-primary {
+  background-color: #4f46e5 !important;
+  border-color: #4f46e5 !important;
+  border-radius: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: capitalize !important;
+}
+.fc .fc-button-primary:disabled {
+  background-color: #9ca3af !important;
+  border-color: #9ca3af !important;
+}
+.fc .fc-toolbar-title {
+  font-size: 1.125rem !important;
+  font-weight: 700 !important;
+  color: #1f2937 !important;
+}

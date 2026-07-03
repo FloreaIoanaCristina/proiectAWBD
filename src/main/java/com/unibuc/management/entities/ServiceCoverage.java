@@ -11,11 +11,11 @@ public class ServiceCoverage {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "service_id")
+    @JoinColumn(name = "ID_MEDICAL_SERVICE", nullable = false)
     private MedicalService medicalService;
 
     @ManyToOne
-    @JoinColumn(name = "provider_id")
+    @JoinColumn(name = "ID_INSURANCE_PROVIDER", nullable = false)
     private InsuranceProvider insuranceProvider;
 
     @Column(name = "coverage_percent")

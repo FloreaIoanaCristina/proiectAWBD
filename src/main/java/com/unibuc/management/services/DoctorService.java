@@ -4,13 +4,16 @@ import com.unibuc.management.dto.validation.DoctorRequestDTO;
 import com.unibuc.management.entities.Doctor;
 import com.unibuc.management.entities.MedicalService;
 import com.unibuc.management.entities.User;
+import com.unibuc.management.exceptions.InvalidActionException;
 import com.unibuc.management.exceptions.ResourceNotFoundException;
+import com.unibuc.management.repositories.AppointmentRepository;
 import com.unibuc.management.repositories.DoctorRepository;
 import com.unibuc.management.repositories.MedicalServiceRepository;
 import com.unibuc.management.repositories.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,13 +27,16 @@ public class DoctorService {
     private final DoctorRepository doctorRepository;
     private final UserRepository userRepository;
     private final MedicalServiceRepository medicalServiceRepository;
+    private final AppointmentRepository appointmentRepository;
 
     public DoctorService(DoctorRepository doctorRepository,
                          UserRepository userRepository,
-                         MedicalServiceRepository medicalServiceRepository) {
+                         MedicalServiceRepository medicalServiceRepository,
+                         AppointmentRepository appointmentRepository) {
         this.doctorRepository = doctorRepository;
         this.userRepository = userRepository;
         this.medicalServiceRepository = medicalServiceRepository;
+        this.appointmentRepository = appointmentRepository;
     }
 
     public Doctor saveDoctor(DoctorRequestDTO doctorRequestDTO) {
@@ -104,6 +110,21 @@ public class DoctorService {
         Doctor doctor = getDoctorById(id);
         User user = doctor.getUser();
 
+        long appointmentCount = appointmentRepository.countByDoctorId(id);
+        if (appointmentCount > 0) {
+            throw new InvalidActionException("Nu se poate șterge medicul deoarece are " + appointmentCount + " programări înregistrate în sistem.");
+        }
+
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+        boolean isDoctor = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"));
+
+        if (isDoctor) {
+            if (user != null && !user.getUsername().equals(currentUsername)) {
+                throw new InvalidActionException("Nu aveți permisiunea să ștergeți profilul unui alt medic care are cont activ.");
+            }
+        }
+
         if (user != null) {
             log.info("Se șterge utilizatorul asociat '{}' (ID: {}) pentru a elimina doctorul în cascadă.",
                     user.getUsername(), user.getId());
@@ -131,6 +152,6 @@ public class DoctorService {
 
     public Page<Doctor> getDoctorsPaged(Pageable pageable) {
         log.debug("Se solicită lista paginată de doctori folosind structura Pageable.");
-        return doctorRepository.findAll(pageable);
+        return doctorRepository.findAllWithServicesPaged(pageable);
     }
 }

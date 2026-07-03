@@ -14,6 +14,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
@@ -44,6 +47,13 @@ public class DoctorScheduleController {
         }
     }
 
+    @GetMapping("/pto/{doctorId}")
+    @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
+    public ResponseEntity<List<ScheduleEntry>> getDoctorLeaves(@PathVariable Integer doctorId) {
+        List<ScheduleEntry> leaves = doctorScheduleService.getDoctorLeaves(doctorId);
+        return ResponseEntity.ok(leaves);
+    }
+
     @PostMapping("/schedulePTO")
     @PreAuthorize("hasRole('DOCTOR')")
     public ResponseEntity<String> schedulePTO(@Valid @RequestBody PtoRequestDTO pto) {
@@ -58,8 +68,9 @@ public class DoctorScheduleController {
         if (pto.getEndDate().isBefore(pto.getStartDate())) {
             throw new InvalidActionException("Data de sfârșit nu poate fi înainte de data de început.");
         }
-
-        doctorScheduleService.schedulePTO(pto.getDoctorId(), pto.getStartDate(), pto.getEndDate());
+        OffsetDateTime startDateTime = pto.getStartDate().atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime endDateTime = pto.getEndDate().atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+        doctorScheduleService.schedulePTO(pto.getDoctorId(), startDateTime, endDateTime);
 
         return ResponseEntity.ok("Concediu programat cu succes!");
     }
@@ -70,8 +81,9 @@ public class DoctorScheduleController {
         if (dto.getEndDate().isBefore(dto.getStartDate())) {
             throw new InvalidActionException("Data de sfârșit nu poate fi înainte de data de început.");
         }
-
-        doctorScheduleService.updatePTO(ptoId, dto.getStartDate(), dto.getEndDate());
+        OffsetDateTime startDateTime = dto.getStartDate().atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime endDateTime = dto.getEndDate().atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+        doctorScheduleService.updatePTO(ptoId, startDateTime, endDateTime);
         return ResponseEntity.ok("Concediu actualizat cu succes!");
     }
 

@@ -10,7 +10,7 @@ import java.time.OffsetDateTime;
 @Entity
 @Table(name = "PAID_TIME_OFF")
 @Access(AccessType.FIELD)
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+//@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class PaidTimeOff {
 
     @Id

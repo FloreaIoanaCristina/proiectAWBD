@@ -1,5 +1,6 @@
 package com.unibuc.management.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,13 +18,17 @@ public class Payment {
     private BigDecimal amount;
 
     @Column(name = "PAYMENT_METHOD", length = 50)
-    private String paymentMethod; // Ex: "Card", "Cash"
+    private String paymentMethod; //"Card", "Cash"
 
     @Column(name = "PAYMENT_DATE")
     private LocalDateTime paymentDate;
 
+    @Column(name = "STATUS", length = 20, nullable = false)
+    private String status; // "PENDING", "COMPLETED"
+
     @OneToOne
     @JoinColumn(name = "APPOINTMENT_ID", referencedColumnName = "ID")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "payment"})
     private Appointment appointment;
 
     public Payment() {
@@ -33,6 +38,7 @@ public class Payment {
         this.amount = amount;
         this.paymentMethod = paymentMethod;
         this.paymentDate = paymentDate;
+        this.status = status;
         this.appointment = appointment;
     }
 
@@ -67,6 +73,8 @@ public class Payment {
     public void setPaymentDate(LocalDateTime paymentDate) {
         this.paymentDate = paymentDate;
     }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
     public Appointment getAppointment() {
         return appointment;

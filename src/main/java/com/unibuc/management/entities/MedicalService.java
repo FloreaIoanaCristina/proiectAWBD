@@ -9,7 +9,7 @@ import java.util.Set;
 @Entity
 @Table(name = "MEDICAL_SERVICE")
 @Access(AccessType.FIELD)
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+//@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class MedicalService {
 
     @Id
@@ -39,12 +39,12 @@ public class MedicalService {
     private Integer nrOfRatings;
 
     @OneToMany(mappedBy = "medicalService")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "patientAppointments"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "medicalService"})
     private Set<Doctor> medicalServiceDoctors;
 
     @OneToMany(mappedBy = "medicalService")
     @JsonIgnore
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "patientAppointments"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "medicalService"})
     private Set<Appointment> medicalServiceAppointments;
 
     @ManyToMany
@@ -54,14 +54,6 @@ public class MedicalService {
             inverseJoinColumns = @JoinColumn(name = "ID_INSURANCE_PROVIDER")
     )
     private Set<InsuranceProvider> coveredByInsurances;
-
-    @ManyToMany
-    @JoinTable(
-            name = "SERVICE_SUBSCRIPTION_PLAN",
-            joinColumns = @JoinColumn(name = "ID_MEDICAL_SERVICE"),
-            inverseJoinColumns = @JoinColumn(name = "ID_SUBSCRIPTION_PLAN")
-    )
-    private Set<SubscriptionPlan> includedInSubscriptions;
 
     public Integer getId() {
         return id;
@@ -147,13 +139,5 @@ public class MedicalService {
 
     public void setCoveredByInsurances(Set<InsuranceProvider> coveredByInsurances) {
         this.coveredByInsurances = coveredByInsurances;
-    }
-
-    public Set<SubscriptionPlan> getIncludedInSubscriptions() {
-        return includedInSubscriptions;
-    }
-
-    public void setIncludedInSubscriptions(Set<SubscriptionPlan> includedInSubscriptions) {
-        this.includedInSubscriptions = includedInSubscriptions;
     }
 }

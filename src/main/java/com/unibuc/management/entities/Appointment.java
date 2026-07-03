@@ -9,7 +9,7 @@ import java.time.OffsetDateTime;
 @Entity
 @Table(name = "APPOINTMENT")
 @Access(AccessType.FIELD)
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+//@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Appointment {
 
     @Id
@@ -23,11 +23,12 @@ public class Appointment {
     @Column(name = "STATUS", nullable = false, length = 50)
     private String status;
     @OneToOne(mappedBy = "appointment", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "appointment"})
     private Payment payment;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "ID_MEDICAL_SERVICE", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "patientAppointments"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "medicalServiceAppointments"})
     private MedicalService medicalService;
 
     @ManyToOne(fetch = FetchType.LAZY)

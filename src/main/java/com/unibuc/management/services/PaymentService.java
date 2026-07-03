@@ -40,7 +40,7 @@ public class PaymentService {
     }
 
     public Payment createPaymentForPatient(Patient patient, MedicalService service, Appointment appointment) {
-        log.debug("Inițiere calcul plată pentru pacientul ID: {}, serviciul medical ID: {}", patient.getId(), service.getId());
+        log.debug("Inițiere calcul plată în așteptare pentru pacientul ID: {}, serviciul medical ID: {}", patient.getId(), service.getId());
 
         double price = service.getPrice();
         log.debug("Prețul de bază al serviciului '{}' este: {} RON", service.getName(), price);
@@ -72,11 +72,13 @@ public class PaymentService {
 
         Payment payment = new Payment();
         payment.setAmount(BigDecimal.valueOf(price));
-        payment.setPaymentMethod("Cash");
-        payment.setPaymentDate(LocalDateTime.now());
+
+        payment.setPaymentMethod(null);
+        payment.setPaymentDate(null);
+        payment.setStatus("PENDING");
         payment.setAppointment(appointment);
 
-        log.debug("Entitatea Payment a fost instanțiată temporar cu suma finală: {} RON.", price);
+        log.debug("Entitatea Payment a fost generată cu status PENDING și suma: {} RON.", price);
         return payment;
     }
     public List<Payment> getAllPayments() {
@@ -93,6 +95,10 @@ public class PaymentService {
             });
     }
 
+    public List<Payment> getPaymentsByPatientId(Long patientId) {
+        log.debug("Se preia istoricul plăților pentru pacientul cu ID-ul: {}", patientId);
+        return paymentRepository.findByPatientId(patientId);
+    }
     @Transactional
     public Payment savePayment(PaymentRequestDTO dto) {
         log.info("Se înregistrează o plată nouă din DTO pentru suma: {}", dto.getAmount());
@@ -128,19 +134,26 @@ public class PaymentService {
         Appointment appointment = appointmentRepository.findById(dto.getAppointmentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Programarea cu ID-ul " + dto.getAppointmentId() + " nu există."));
 
-        log.debug("Modificare plată ID {}: Sumă veche: {} RON -> Sumă nouă: {} RON",
-                id, existingPayment.getAmount(), dto.getAmount());
+        log.debug("Modificare plată ID {}: Status vechi: {} -> Status nou: {}, Sumă veche: {} RON -> Sumă nouă: {} RON",
+                id, existingPayment.getStatus(), dto.getStatus(), existingPayment.getAmount(), dto.getAmount());
 
         existingPayment.setAmount(BigDecimal.valueOf(dto.getAmount()));
         existingPayment.setPaymentMethod(dto.getPaymentMethod());
         existingPayment.setAppointment(appointment);
+        existingPayment.setStatus(dto.getStatus());
 
-        if (dto.getPaymentDate() != null) {
-            existingPayment.setPaymentDate(dto.getPaymentDate().atStartOfDay());
+        if ("COMPLETED".equalsIgnoreCase(dto.getStatus())) {
+            if (existingPayment.getPaymentDate() == null) {
+                existingPayment.setPaymentDate(LocalDateTime.now());
+                log.debug("Plata a fost marcată ca COMPLETED. S-a generat automat data achitării.");
+            }
+        } else if ("PENDING".equalsIgnoreCase(dto.getStatus())) {
+            existingPayment.setPaymentDate(null);
+            log.debug("Plata a fost marcată ca PENDING. Data achitării a fost resetată.");
         }
 
         Payment updatedPayment = paymentRepository.save(existingPayment);
-        log.info("Plata cu ID-ul {} a fost actualizată cu succes.", id);
+        log.info("Plata cu ID-ul {} a fost actualizată cu succes. Status curent: {}", id, updatedPayment.getStatus());
         return updatedPayment;
     }
 

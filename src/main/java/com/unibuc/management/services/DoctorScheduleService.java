@@ -50,7 +50,7 @@ public class DoctorScheduleService {
         List<Appointment> appointments = appointmentRepository.findByDoctorIdAndDate(doctorId, startOfDay, endOfDay);
         log.debug("S-au găsit {} programări active pentru doctorul ID: {}", appointments.size(), doctorId);
 
-        List<PaidTimeOff> ptoEntries = ptoRepository.findByDoctorAndDate(doctorId, startOfDay, endOfDay);
+        List<PaidTimeOff> ptoEntries = ptoRepository.findActivePtoForDoctorInDay(doctorId, startOfDay, endOfDay);
         log.debug("S-au găsit {} intrări de concediu (PTO) active pentru doctorul ID: {}", ptoEntries.size(), doctorId);
 
         List<ScheduleEntry> schedule = new ArrayList<>();
@@ -67,6 +67,24 @@ public class DoctorScheduleService {
 
         log.debug("Programul combinat și sortat conține un total de {} intrări cronologice.", schedule.size());
         return schedule;
+    }
+
+    public List<ScheduleEntry> getDoctorLeaves(Integer doctorId) {
+        log.debug("Se preia istoricul complet de concedii (PTO) pentru doctorul ID: {}", doctorId);
+
+        OffsetDateTime startRange = OffsetDateTime.now().minusYears(2);
+        OffsetDateTime endRange = OffsetDateTime.now().plusYears(2);
+
+        List<PaidTimeOff> ptoEntries = ptoRepository.findActivePtoForDoctorInDay(doctorId, startRange, endRange);
+
+        return ptoEntries.stream()
+                .map(pto -> new ScheduleEntry(
+                        "Paid Time Off",
+                        pto.getPtoFrom(),
+                        pto.getPtoTo(),
+                        pto
+                ))
+                .collect(Collectors.toList());
     }
 
     @Transactional

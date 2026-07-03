@@ -12,9 +12,13 @@ const api = axios.create({
   xsrfHeaderName: 'X-XSRF-TOKEN'
 });
 
-axios.defaults.withCredentials = true;
-axios.defaults.xsrfCookieName = 'XSRF-TOKEN';
-axios.defaults.xsrfHeaderName = 'X-XSRF-TOKEN';
+const authApi = axios.create({
+  baseURL: '/auth',
+  withCredentials: true,
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN'
+});
+
 
 api.interceptors.request.use((config) => {
   const getCookie = (name) => {
@@ -34,31 +38,41 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
-api.interceptors.response.use((response) => {
-  return response; 
-}, (error) => {
-  return Promise.reject(error);
-});
+authApi.interceptors.request.use((config) => {
+  const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  };
+  const csrfToken = getCookie('XSRF-TOKEN');
+  if (csrfToken) {
+    config.headers['X-XSRF-TOKEN'] = csrfToken;
+  }
+  return config;
+}, (error) => Promise.reject(error));
 
 export const authService = {
-  register: (registerRequest) => axios.post(`${BASE_URL}/auth/register`, registerRequest),
+  register: (registerRequest) => authApi.post(`/register`, registerRequest),
 
-  login: (loginRequest) => axios.post(`${BASE_URL}/auth/login`, loginRequest),
+  login: (loginRequest) => authApi.post(`/login`, loginRequest),
 
-  logout: () => axios.post(`${BASE_URL}/auth/logout`),
+  logout: () => authApi.post(`/logout`),
 
-  getCurrentUser: (username) => axios.get(`${BASE_URL}/auth/me`, { params: { username } }),
+  getCurrentUser: (username) => authApi.get(`/me`, { params: { username } }),
 
-  deleteUser: (username) => axios.delete(`${BASE_URL}/auth/delete/${username}`),
+  deleteUser: (username) => authApi.delete(`/delete/${username}`),
 };
 
 export const appointmentService = {
   create: (appointmentDto) => api.post('/appointments', appointmentDto),
 
-  getAvailableSlots: (medicalServiceId, date) => 
-    api.get('/appointments/available-times', { params: { medicalServiceId, date } }),
+  getAvailableSlots: (medicalServiceId, date, doctorId) => {
+    const params = { medicalServiceId, date };
+    if (doctorId) params.doctorId = doctorId;
+    return api.get('/appointments/available-times', { params });
+  },
 
-  getByPatientId: (patientId) => api.get(`/appointments/patient/${patientId}`),
+  getByPatientId: (patientId, params) => api.get(`/appointments/patient/${patientId}`, { params }),
 
   getByDoctorId: (doctorId, params) => api.get(`/appointments/doctor/${doctorId}`, { params }),
 
@@ -102,6 +116,9 @@ export const doctorService = {
 export const doctorScheduleService = {
   getScheduleForDay: (doctorId, dateString) => 
     api.get('/doctor-schedule/day', { params: { doctorId, date: dateString } }),
+  
+  getByDoctorId: (doctorId) => 
+    api.get(`/doctor-schedule/pto/${doctorId}`),
 
   schedulePTO: (ptoDto) => api.post('/doctor-schedule/schedulePTO', ptoDto),
 
@@ -144,23 +161,14 @@ export const paymentService = {
 
   getById: (id) => api.get(`/payments/${id}`),
 
+  getByPatientId: (patientId) => api.get(`/payments/patient/${patientId}`),
+
   create: (paymentDto) => api.post('/payments', paymentDto),
 
   update: (id, paymentDto) => api.put(`/payments/${id}`, paymentDto),
 
   delete: (id) => api.delete(`/payments/${id}`),
 };
-
-export const paymentTypeService = {
-  getAll: () => api.get('/payment-types'),
-
-  create: (paymentTypeDto) => api.post('/payment-types', paymentTypeDto),
-
-  update: (id, paymentTypeDto) => api.put(`/payment-types/${id}`, paymentTypeDto),
-
-  delete: (id) => api.delete(`/payment-types/${id}`),
-};
-
 
 export const serviceCoverageService = {
   getAll: () => api.get('/service-coverages'),
@@ -170,18 +178,6 @@ export const serviceCoverageService = {
   update: (id, coverageDto) => api.put(`/service-coverages/${id}`, coverageDto),
 
   delete: (id) => api.delete(`/service-coverages/${id}`),
-};
-
-export const subscriptionPlanService = {
-  getAll: () => api.get('/subscription-plans'),
-
-  getById: (id) => api.get(`/subscription-plans/${id}`),
-
-  create: (planDto) => api.post('/subscription-plans', planDto),
-
-  update: (id, planDto) => api.put(`/subscription-plans/${id}`, planDto),
-
-  delete: (id) => api.delete(`/subscription-plans/${id}`),
 };
 
 export default api;

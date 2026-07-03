@@ -1,10 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { patientService } from '../services/api';
-import { User,  ShieldAlert, PlusCircle, Edit2, Trash2, ArrowUpDown } from 'lucide-react';
+import { User, ShieldAlert, PlusCircle, Edit2, Trash2, ArrowUpDown, UserX } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function PatientsPage() {
+const navigate = useNavigate();
+const savedUser = localStorage.getItem('med_user');
+const user = savedUser ? JSON.parse(savedUser) : null;
+const userRole = user.role ?? null;
+const profileId = user ? user.profileId : null;
+const isPatient = userRole === 'ROLE_PATIENT' || userRole === 'PATIENT';
+
   const [patients, setPatients] = useState([]);
-  
   const [page, setPage] = useState(0);
   const [size] = useState(5);
   const [totalPages, setTotalPages] = useState(0);
@@ -25,25 +32,36 @@ export default function PatientsPage() {
 
   const fetchPatients = useCallback(async () => {
     try {
-      const params = {
-        page: page,
-        size: size,
-        sort: `${sortBy},${sortDir}`
-      };
-      const response = await patientService.getPaged(params);
-      
-      setPatients(response.data.content || []);
-      setTotalPages(response.data.totalPages || 0);
+      if (isPatient) {
+        if (!profileId) {
+          setError('Nu s-a putut identifica ID-ul de profil pentru pacient.');
+          return;
+        }
+        const response = await patientService.getById(profileId);
+
+        setPatients([response.data]);
+        setTotalPages(1);
+      } else {
+        const params = {
+          page: page,
+          size: size,
+          sort: `${sortBy},${sortDir}`
+        };
+        const response = await patientService.getPaged(params);
+        setPatients(response.data.content || []);
+        setTotalPages(response.data.totalPages || 0);
+      }
     } catch (err) {
-      setError('Eroare la preluarea listei de pacienți de pe server.');
+      setError('Eroare la preluarea datelor de pe server.');
     }
-  }, [page, size, sortBy, sortDir]);
+  }, [page, size, sortBy, sortDir, isPatient, profileId]);
 
   useEffect(() => {
     fetchPatients();
   }, [fetchPatients]);
 
   const handleSort = (field) => {
+    if (isPatient) return; 
     if (sortBy === field) {
       setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
     } else {
@@ -100,7 +118,7 @@ export default function PatientsPage() {
     try {
       if (isEditMode) {
         await patientService.update(selectedId, payload);
-        setSuccess('Datele pacientului au fost actualizate.');
+        setSuccess('Datele au fost actualizate cu succes.');
       } else {
         await patientService.create(payload);
         setSuccess('Pacientul a fost înregistrat cu succes.');
@@ -113,6 +131,7 @@ export default function PatientsPage() {
   };
 
   const handleDelete = async (id) => {
+    if (isPatient) return;
     if (!window.confirm('Sigur doriți să ștergeți acest pacient? Această acțiune poate anula și programările asociate.')) return;
     setError('');
     setSuccess('');
@@ -122,7 +141,37 @@ export default function PatientsPage() {
       setSuccess('Pacientul a fost eliminat din sistem.');
       fetchPatients();
     } catch (err) {
-      setError(err.response?.data?.message || 'Nu s-a putut șterge pacientul (posibil să aibă constrângeri de cheie străină).');
+      setError(err.response?.data?.message || 'Nu s-a putut șterge pacientul.');
+    }
+  };
+
+  const handleDeleteOwnAccount = async () => {
+    if (!profileId) return;
+
+    const firstConfirm = window.confirm(
+      "Sigur doriți să vă ștergeți definitiv contul? Această acțiune este ireversibilă!"
+    );
+    if (!firstConfirm) return;
+
+    const secondConfirm = window.confirm(
+      "Atenție: Toate datele dvs. de profil și accesul la platformă vor fi eliminate. Dacă aveți programări active, serverul va respinge ștergerea. Continuați?"
+    );
+    if (!secondConfirm) return;
+
+    setError('');
+    setSuccess('');
+
+    try {
+      await patientService.delete(profileId);
+      setSuccess('Contul tău a fost șters cu succes. Te deconectăm...');
+      
+      setTimeout(() => {
+        localStorage.removeItem('med_user');
+        navigate('/login');
+        window.location.reload();
+      }, 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Nu s-a putut efectua ștergerea contului.');
     }
   };
 
@@ -130,17 +179,23 @@ export default function PatientsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Registru Pacienți</h2>
-          <p className="text-sm text-gray-500">Administrare pacienți, abonamente și istoric medical</p>
+          <h2 className="text-2xl font-bold text-gray-800">
+            {isPatient ? 'Profilul Meu Medical' : 'Registru Pacienți'}
+          </h2>
+          <p className="text-sm text-gray-500">
+            {isPatient ? 'Gestionarea datelor personale și a abonamentului' : 'Administrare pacienți, abonamente și istoric medical'}
+          </p>
         </div>
         
-        <button 
-          onClick={openCreateModal}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
-        >
-          <PlusCircle size={18} />
-          Adaugă Pacient
-        </button>
+        {!isPatient && (
+          <button 
+            onClick={openCreateModal}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+          >
+            <PlusCircle size={18} />
+            Adaugă Pacient
+          </button>
+        )}
       </div>
 
       {error && (
@@ -155,98 +210,164 @@ export default function PatientsPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
-              <th className="py-4 px-6">ID</th>
-              <th className="py-4 px-6 cursor-pointer hover:bg-gray-100" onClick={() => handleSort('name')}>
-                <div className="flex items-center gap-1">Nume Complet <ArrowUpDown size={14} /></div>
-              </th>
-              <th className="py-4 px-6">Data Nașterii</th>
-              <th className="py-4 px-6">Gen</th>
-              <th className="py-4 px-6">Status Abonament</th>
-              <th className="py-4 px-6 text-center">Acțiuni</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
-            {patients.length > 0 ? (
-              patients.map((patient) => (
-                <tr key={patient.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="py-4 px-6 font-semibold text-gray-400">#{patient.id}</td>
-                  <td className="py-4 px-6 font-medium text-gray-900">
-                    <div className="flex items-center gap-2">
-                      <User size={16} className="text-indigo-500" />
-                      {patient.name}
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 text-gray-500">
-                    {patient.age ? new Date(patient.age).toLocaleDateString('ro-RO') : 'Nespecificată'}
-                  </td>
-                  <td className="py-4 px-6">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${patient.sex ? 'bg-blue-50 text-blue-700' : 'bg-pink-50 text-pink-700'}`}>
-                      {patient.sex ? 'Masculin' : 'Feminin'}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${patient.subscription ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                      {patient.subscription ? 'Activ' : 'Fără Abonament'}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6">
-                    <div className="flex justify-center items-center gap-3">
-                      <button 
-                        onClick={() => openEditModal(patient)}
-                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Editează profilul"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(patient.id)}
-                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Șterge pacientul"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="6" className="py-8 text-center text-gray-400">
-                  Nu s-au găsit pacienți înregistrați.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      {isPatient && patients.length > 0 ? (
+        <div className="space-y-6 max-w-2xl">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-2xl space-y-6">
+            <div className="flex items-center gap-4 border-b border-gray-100 pb-4">
+              <div className="p-3 bg-indigo-50 rounded-full text-indigo-600">
+                <User size={32} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">{patients[0].name}</h3>
+                <p className="text-sm text-gray-400">Fișă Pacient #{patients[0].id}</p>
+              </div>
+            </div>
 
-        {totalPages > 1 && (
-          <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex items-center justify-between text-sm">
-            <span className="text-gray-500">
-              Pagina <strong className="text-gray-700">{page + 1}</strong> din <strong className="text-gray-700">{totalPages}</strong>
-            </span>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-6 text-sm">
+              <div>
+                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Data Nașterii</span>
+                <span className="text-gray-700 font-medium mt-1 block">
+                  {patients[0].age ? new Date(patients[0].age).toLocaleDateString('ro-RO') : 'Nespecificată'}
+                </span>
+              </div>
+              <div>
+                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Gen</span>
+                <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold mt-1 ${patients[0].sex ? 'bg-blue-50 text-blue-700' : 'bg-pink-50 text-pink-700'}`}>
+                  {patients[0].sex ? 'Masculin' : 'Feminin'}
+                </span>
+              </div>
+              <div>
+                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Status Abonament</span>
+                <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold mt-1 ${patients[0].subscription ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                  {patients[0].subscription ? 'Activ (Premium)' : 'Fără Abonament'}
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-gray-100 flex justify-end">
               <button
-                disabled={page === 0}
-                onClick={() => setPage(page - 1)}
-                className="px-3 py-1 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors font-medium"
+                onClick={() => openEditModal(patients[0])}
+                className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
               >
-                Anterior
-              </button>
-              <button
-                disabled={page === totalPages - 1}
-                onClick={() => setPage(page + 1)}
-                className="px-3 py-1 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors font-medium"
-              >
-                Următor
+                <Edit2 size={16} />
+                Modifică datele personale
               </button>
             </div>
           </div>
-        )}
-      </div>
+          <div className="bg-white rounded-2xl shadow-sm border p-6 space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-red-600 flex items-center gap-2">
+                <UserX size={18} />
+                Ștergeți contul
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Odată cu ștergerea contului, veți pierde complet fișa medicală înscrisă în clinică. Această acțiune va eșua automat dacă aveți programări în sistem.
+              </p>
+            </div>
+            <div className="pt-1">
+              <button
+                onClick={handleDeleteOwnAccount}
+                className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2 rounded-xl text-xs font-bold transition-colors"
+              >
+                Solicită eliminarea definitivă a contului meu
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <th className="py-4 px-6">ID</th>
+                <th className="py-4 px-6 cursor-pointer hover:bg-gray-100" onClick={() => handleSort('name')}>
+                  <div className="flex items-center gap-1">Nume Complet <ArrowUpDown size={14} /></div>
+                </th>
+                <th className="py-4 px-6">Data Nașterii</th>
+                <th className="py-4 px-6">Gen</th>
+                <th className="py-4 px-6">Status Abonament</th>
+                <th className="py-4 px-6 text-center">Acțiuni</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
+              {patients.length > 0 ? (
+                patients.map((patient) => (
+                  <tr key={patient.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="py-4 px-6 font-semibold text-gray-400">#{patient.id}</td>
+                    <td className="py-4 px-6 font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <User size={16} className="text-indigo-500" />
+                        {patient.name}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-gray-500">
+                      {patient.age ? new Date(patient.age).toLocaleDateString('ro-RO') : 'Nespecificată'}
+                    </td>
+                    <td className="py-4 px-6">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${patient.sex ? 'bg-blue-50 text-blue-700' : 'bg-pink-50 text-pink-700'}`}>
+                        {patient.sex ? 'Masculin' : 'Feminin'}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${patient.subscription ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                        {patient.subscription ? 'Activ' : 'Fără Abonament'}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex justify-center items-center gap-3">
+                        <button 
+                          onClick={() => openEditModal(patient)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Editează profilul"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(patient.id)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Șterge pacientul"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="py-8 text-center text-gray-400">
+                    Nu s-au găsit pacienți înregistrați.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          {totalPages > 1 && (
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex items-center justify-between text-sm">
+              <span className="text-gray-500">
+                Pagina <strong className="text-gray-700">{page + 1}</strong> din <strong className="text-gray-700">{totalPages}</strong>
+              </span>
+              <div className="flex gap-2">
+                <button
+                  disabled={page === 0}
+                  onClick={() => setPage(page - 1)}
+                  className="px-3 py-1 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors font-medium"
+                >
+                  Anterior
+                </button>
+                <button
+                  disabled={page === totalPages - 1}
+                  onClick={() => setPage(page + 1)}
+                  className="px-3 py-1 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors font-medium"
+                >
+                  Următor
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -261,7 +382,7 @@ export default function PatientsPage() {
                 <input 
                   type="text"
                   className="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
-                  placeholder="Numele și prenumele pacientului"
+                  placeholder="Numele și prenumele"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -295,7 +416,8 @@ export default function PatientsPage() {
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Abonament Clinică</label>
                   <select 
-                    className="w-full bg-white px-3 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
+                    disabled={isPatient}
+                    className="w-full bg-white px-3 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm disabled:bg-gray-50 disabled:text-gray-400"
                     value={subscription}
                     onChange={(e) => setSubscription(e.target.value === 'true')}
                   >
@@ -317,7 +439,7 @@ export default function PatientsPage() {
                   type="submit"
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition-colors"
                 >
-                  {isEditMode ? 'Salvează Modificările' : 'Adaugă Pacient'}
+                  Salvează Modificările
                 </button>
               </div>
             </form>
