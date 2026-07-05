@@ -17,7 +17,7 @@ Sistem de Programari Medicale
 13. Sistemul trebuie să recalculeze automat ratingul mediu al unui serviciu medical după înregistrarea unui nou feedback.
 14. Sistemul trebuie să returneze mesaje de eroare corespunzătoare atunci când o operație nu poate fi efectuată (de exemplu, programare invalidă, medic inexistent, pacient inexistent).
 15. Sistemul trebuie să asigure accesul la funcționalități în funcție de rolul utilizatorului (pacient, medic, administrator).
-16. 
+
 Entități
 
 Sistemul de management medical utilizează un model relațional complex format din 9 entități interconectate. Arhitectura bazei de date a fost concepută pentru a gestiona fluxul complet al unei clinici: de la autentificare și profiluri de utilizatori (Doctori/Pacienți), până la logica de programări, plăți și scheme de asigurare/abonament.
