@@ -1,23 +1,23 @@
 # proiectAWBD
 Sistem de Programari Medicale
 
-Cerințe funcționale
-Sistemul trebuie să permită înregistrarea și gestionarea profilurilor de pacient și de medic.
-Sistemul trebuie să permită autentificarea utilizatorilor pe baza unui cont și a unui rol (pacient, medic sau administrator).
-Sistemul trebuie să permită pacientului vizualizarea listei serviciilor medicale disponibile.
-Sistemul trebuie să permită afișarea intervalelor orare disponibile pentru programarea unui serviciu medical.
-Sistemul trebuie să permită crearea unei programări doar dacă intervalul selectat este disponibil.
-Sistemul trebuie să împiedice efectuarea unei programări într-un interval ocupat, în afara programului medicului sau într-o perioadă de concediu.
-Sistemul trebuie să permită pacientului vizualizarea tuturor programărilor sale.
-Sistemul trebuie să permită medicului înregistrarea zilelor de concediu (PTO).
-Sistemul trebuie să verifice existența programărilor înainte de aprobarea unei cereri de concediu și să respingă solicitarea dacă există consultații programate.
-Sistemul trebuie să permită actualizarea statusului unei programări (de exemplu: Appointed, Completed, Cancelled).
-Sistemul trebuie să genereze automat informațiile privind plata unei programări și să stabilească dacă aceasta este acoperită de asigurare sau abonament.
-Sistemul trebuie să permită pacientului acordarea unui rating pentru serviciul medical doar după finalizarea consultației.
-Sistemul trebuie să recalculeze automat ratingul mediu al unui serviciu medical după înregistrarea unui nou feedback.
-Sistemul trebuie să returneze mesaje de eroare corespunzătoare atunci când o operație nu poate fi efectuată (de exemplu, programare invalidă, medic inexistent, pacient inexistent).
-Sistemul trebuie să asigure accesul la funcționalități în funcție de rolul utilizatorului (pacient, medic, administrator).
-
+**Cerințe funcționale**
+1. Sistemul trebuie să permită înregistrarea și gestionarea profilurilor de pacient și de medic.
+2. Sistemul trebuie să permită autentificarea utilizatorilor pe baza unui cont și a unui rol (pacient, medic sau administrator).
+3. Sistemul trebuie să permită pacientului vizualizarea listei serviciilor medicale disponibile.
+4. Sistemul trebuie să permită afișarea intervalelor orare disponibile pentru programarea unui serviciu medical.
+5. Sistemul trebuie să permită crearea unei programări doar dacă intervalul selectat este disponibil.
+6. Sistemul trebuie să împiedice efectuarea unei programări într-un interval ocupat, în afara programului medicului sau într-o perioadă de concediu.
+7. Sistemul trebuie să permită pacientului vizualizarea tuturor programărilor sale.
+8. Sistemul trebuie să permită medicului înregistrarea zilelor de concediu (PTO).
+9. Sistemul trebuie să verifice existența programărilor înainte de aprobarea unei cereri de concediu și să respingă solicitarea dacă există consultații programate.
+10. Sistemul trebuie să permită actualizarea statusului unei programări (de exemplu: Appointed, Completed, Cancelled).
+11. Sistemul trebuie să genereze automat informațiile privind plata unei programări și să stabilească dacă aceasta este acoperită de asigurare sau abonament.
+12. Sistemul trebuie să permită pacientului acordarea unui rating pentru serviciul medical doar după finalizarea consultației.
+13. Sistemul trebuie să recalculeze automat ratingul mediu al unui serviciu medical după înregistrarea unui nou feedback.
+14. Sistemul trebuie să returneze mesaje de eroare corespunzătoare atunci când o operație nu poate fi efectuată (de exemplu, programare invalidă, medic inexistent, pacient inexistent).
+15. Sistemul trebuie să asigure accesul la funcționalități în funcție de rolul utilizatorului (pacient, medic, administrator).
+16. 
 Entități
 
 Sistemul de management medical utilizează un model relațional complex format din 9 entități interconectate. Arhitectura bazei de date a fost concepută pentru a gestiona fluxul complet al unei clinici: de la autentificare și profiluri de utilizatori (Doctori/Pacienți), până la logica de programări, plăți și scheme de asigurare/abonament.
