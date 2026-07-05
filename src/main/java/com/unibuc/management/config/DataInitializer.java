@@ -1,13 +1,15 @@
 package com.unibuc.management.config;
 
-import com.unibuc.management.entities.MedicalService;
+import com.unibuc.management.domain.MedicalService;
 import com.unibuc.management.repositories.MedicalServiceRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
+@Profile({"!test", "!h2"})
 public class DataInitializer implements CommandLineRunner {
 
     private final MedicalServiceRepository medicalServiceRepository;

@@ -1,11 +1,13 @@
 package com.unibuc.management.services;
 
-import com.unibuc.management.dto.validation.InsuranceProviderRequestDTO;
-import com.unibuc.management.entities.InsuranceProvider;
+import com.unibuc.management.dto.request.InsuranceProviderRequestDTO;
+import com.unibuc.management.domain.InsuranceProvider;
+import com.unibuc.management.dto.response.InsuranceProviderResponseDTO;
 import com.unibuc.management.exceptions.ResourceNotFoundException;
+import com.unibuc.management.mappers.InsuranceProviderMapper;
 import com.unibuc.management.repositories.InsuranceProviderRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -15,22 +17,21 @@ import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class InsuranceProviderService {
 
     private final InsuranceProviderRepository insuranceProviderRepository;
 
-    @Autowired
-    public InsuranceProviderService(InsuranceProviderRepository insuranceProviderRepository) {
-        this.insuranceProviderRepository = insuranceProviderRepository;
-    }
-
-    public Page<InsuranceProvider> getAllInsuranceProvidersPaged(Pageable pageable) {
+    public Page<InsuranceProviderResponseDTO> getAllInsuranceProvidersPaged(Pageable pageable) {
         log.debug("Se preia lista paginată a asiguratorilor.");
-        return insuranceProviderRepository.findAll(pageable);
+        return insuranceProviderRepository.findAll(pageable).map(InsuranceProviderMapper::toResponseDTO);
     }
-    public List<InsuranceProvider> getAllInsuranceProviders() {
+    public List<InsuranceProviderResponseDTO> getAllInsuranceProviders() {
         log.debug("Se preia lista completă a asiguratorilor.");
-        return insuranceProviderRepository.findAll();
+        return insuranceProviderRepository.findAll()
+                .stream()
+                .map(InsuranceProviderMapper::toResponseDTO)
+                .toList();
     }
 
     public InsuranceProvider getInsuranceProviderById(Integer id) {
@@ -43,7 +44,7 @@ public class InsuranceProviderService {
     }
 
     @Transactional
-    public InsuranceProvider createInsuranceProvider(InsuranceProviderRequestDTO dto) {
+    public InsuranceProviderResponseDTO createInsuranceProvider(InsuranceProviderRequestDTO dto) {
         log.info("Se creează un asigurator nou cu numele: {}", dto.getName());
 
         InsuranceProvider provider = new InsuranceProvider();
@@ -52,11 +53,11 @@ public class InsuranceProviderService {
 
         InsuranceProvider savedProvider = insuranceProviderRepository.save(provider);
         log.info("Asiguratorul '{}' a fost salvat cu succes (ID alocat: {}).", savedProvider.getName(), savedProvider.getId());
-        return savedProvider;
+        return InsuranceProviderMapper.toResponseDTO(savedProvider);
     }
 
     @Transactional
-    public InsuranceProvider updateInsuranceProvider(Integer id, InsuranceProviderRequestDTO dto) {
+    public InsuranceProviderResponseDTO updateInsuranceProvider(Integer id, InsuranceProviderRequestDTO dto) {
         log.debug("Se solicită actualizarea asiguratorului cu ID-ul: {}", id);
 
         InsuranceProvider existingProvider = getInsuranceProviderById(id);
@@ -70,9 +71,10 @@ public class InsuranceProviderService {
         InsuranceProvider updatedProvider = insuranceProviderRepository.save(existingProvider);
 
         log.info("Asiguratorul cu ID-ul {} a fost actualizat cu succes.", id);
-        return updatedProvider;
+        return InsuranceProviderMapper.toResponseDTO(updatedProvider);
     }
 
+    @Transactional
     public void deleteInsuranceProvider(Integer id) {
         log.debug("Se inițiază ștergerea asiguratorului cu ID-ul: {}", id);
         InsuranceProvider provider = getInsuranceProviderById(id);

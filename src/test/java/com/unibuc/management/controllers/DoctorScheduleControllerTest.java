@@ -1,126 +1,127 @@
 package com.unibuc.management.controllers;
 
-import com.unibuc.management.dto.ScheduleEntry;
-import com.unibuc.management.entities.Doctor;
-import com.unibuc.management.exceptions.InvalidActionException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.unibuc.management.dto.request.PtoRequestDTO;
 import com.unibuc.management.services.DoctorScheduleService;
-import com.unibuc.management.services.DoctorService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@ExtendWith(MockitoExtension.class)
-public class DoctorScheduleControllerTest {
+@WebMvcTest(DoctorScheduleController.class)
+class DoctorScheduleControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockitoBean
     private DoctorScheduleService doctorScheduleService;
 
-    @Mock
-    private DoctorService doctorService;
-
-    @InjectMocks
-    private DoctorScheduleController doctorScheduleController;
-
-    private MockMvc mockMvc;
-    private Doctor doctor;
-
-    @BeforeEach
-    public void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(doctorScheduleController).build();
-        doctor = new Doctor();
-        doctor.setId(1);
-        doctor.setOffice("Cardiology");
-    }
-
     @Test
-    public void getDoctorScheduleForDay_ReturnsSchedule() throws Exception {
-        OffsetDateTime fromTime1 = OffsetDateTime.parse("2025-01-14T09:00:00+00:00");
-        OffsetDateTime toTime1 = OffsetDateTime.parse("2025-01-14T09:30:00+00:00");
+    @WithMockUser
+    void getDoctorScheduleForDay_ShouldReturnOk() throws Exception {
 
-        OffsetDateTime fromTime2 = OffsetDateTime.parse("2025-01-14T10:00:00+00:00");
-        OffsetDateTime toTime2 = OffsetDateTime.parse("2025-01-14T10:30:00+00:00");
-
-        ScheduleEntry entry1 = new ScheduleEntry("Doctor's Appointment", fromTime1, toTime1, doctor);
-        ScheduleEntry entry2 = new ScheduleEntry("Doctor's Appointment", fromTime2, toTime2, doctor);
-        List<ScheduleEntry> schedule = Arrays.asList(entry1, entry2);
-
-        when(doctorScheduleService.getDoctorScheduleForDay(1, LocalDate.of(2025, 1, 14)))
-                .thenReturn(schedule);
+        when(doctorScheduleService.getDoctorScheduleForDay(eq(1), eq("2026-07-15")))
+                .thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/doctor-schedule/day")
                         .param("doctorId", "1")
-                        .param("date", "2025-01-14"))
-                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
-                .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("2025-01-14T09:00:00")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("2025-01-14T10:00:00")));
+                        .param("date", "2026-07-15"))
+                .andExpect(status().isOk());
+
+        verify(doctorScheduleService)
+                .getDoctorScheduleForDay(1, "2026-07-15");
     }
 
     @Test
-    public void schedulePTO_Success_ReturnsSuccessMessage() throws Exception {
-        Authentication auth = mock(Authentication.class);
-        SecurityContext securityContext = mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(auth);
-        when(auth.getName()).thenReturn("doctor_user");
-        SecurityContextHolder.setContext(securityContext);
+    @WithMockUser
+    void getDoctorLeaves_ShouldReturnOk() throws Exception {
 
-        when(doctorService.getDoctorByUsername("doctor_user")).thenReturn(doctor);
-        Mockito.doNothing().when(doctorScheduleService).schedulePTO(eq(1), any(), any());
+        when(doctorScheduleService.getDoctorLeaves(1))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/api/doctor-schedule/pto/1"))
+                .andExpect(status().isOk());
+
+        verify(doctorScheduleService).getDoctorLeaves(1);
+    }
+
+    @Test
+    @WithMockUser(roles = "DOCTOR", username = "doctor1")
+    void schedulePTO_ShouldReturnOk() throws Exception {
+
+        PtoRequestDTO dto = new PtoRequestDTO();
+        dto.setDoctorId(1);
+        dto.setStartDate(LocalDate.now().plusDays(2));
+        dto.setEndDate(LocalDate.now().plusDays(5));
 
         mockMvc.perform(post("/api/doctor-schedule/schedulePTO")
-                        .param("doctorId", "1")
-                        .param("startDate", "2025-01-14T10:00:00+00:00")
-                        .param("endDate", "2025-01-14T12:00:00+00:00"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Concediu programat cu succes!"));
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
+
+        verify(doctorScheduleService)
+                .schedulePTO(any(PtoRequestDTO.class), eq("doctor1"));
     }
 
     @Test
-    public void schedulePTO_Failure_ReturnsBadRequest() throws Exception {
-        Authentication auth = mock(Authentication.class);
-        SecurityContext securityContext = mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(auth);
-        when(auth.getName()).thenReturn("doctor_user");
-        SecurityContextHolder.setContext(securityContext);
+    @WithMockUser(roles = "DOCTOR", username = "doctor1")
+    void updatePTO_ShouldReturnOk() throws Exception {
 
-        when(doctorService.getDoctorByUsername("doctor_user")).thenReturn(doctor);
+        PtoRequestDTO dto = new PtoRequestDTO();
+        dto.setDoctorId(1);
+        dto.setStartDate(LocalDate.now().plusDays(3));
+        dto.setEndDate(LocalDate.now().plusDays(6));
 
-        Mockito.doThrow(new InvalidActionException("Doctor has appointments"))
-                .when(doctorScheduleService).schedulePTO(eq(1), any(), any());
+        mockMvc.perform(put("/api/doctor-schedule/10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
 
-        jakarta.servlet.ServletException exception = org.junit.jupiter.api.Assertions.assertThrows(
-                jakarta.servlet.ServletException.class,
-                () -> {
-                    mockMvc.perform(post("/api/doctor-schedule/schedulePTO")
-                            .param("doctorId", "1")
-                            .param("startDate", "2025-01-14T10:00:00+00:00")
-                            .param("endDate", "2025-01-14T12:00:00+00:00"));
-                }
-        );
+        verify(doctorScheduleService)
+                .updatePTO(eq(10), any(PtoRequestDTO.class), eq("doctor1"));
+    }
 
-        org.junit.jupiter.api.Assertions.assertTrue(exception.getCause() instanceof InvalidActionException);
-        org.junit.jupiter.api.Assertions.assertEquals("Doctor has appointments", exception.getCause().getMessage());
+    @Test
+    @WithMockUser(roles = "DOCTOR", username = "doctor1")
+    void deletePTO_ShouldReturnNoContent() throws Exception {
+
+        mockMvc.perform(delete("/api/doctor-schedule/10"))
+                .andExpect(status().isNoContent());
+
+        verify(doctorScheduleService)
+                .deletePTO(10, "doctor1");
+    }
+
+    @Test
+    @WithMockUser(roles = "DOCTOR")
+    void schedulePTO_WithInvalidDto_ShouldReturnBadRequest() throws Exception {
+
+        PtoRequestDTO dto = new PtoRequestDTO();
+
+        mockMvc.perform(post("/api/doctor-schedule/schedulePTO")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(doctorScheduleService);
     }
 }

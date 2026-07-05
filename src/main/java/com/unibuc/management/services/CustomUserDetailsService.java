@@ -1,6 +1,6 @@
 package com.unibuc.management.services;
 
-import com.unibuc.management.entities.User;
+import com.unibuc.management.domain.User;
 import com.unibuc.management.repositories.UserRepository;
 import com.unibuc.management.security.CustomUserDetails;
 import com.unibuc.management.security.Role;

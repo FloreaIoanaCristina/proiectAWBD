@@ -1,5 +1,7 @@
 package com.unibuc.management.config;
 
+import com.unibuc.management.domain.User;
+import com.unibuc.management.repositories.UserRepository;
 import com.unibuc.management.security.CustomUserDetails;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,19 +10,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
@@ -43,10 +41,8 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
     private final DataSource dataSource;
-    //private final UserDetailsService userDetailsService;
-    public SecurityConfig(DataSource dataSource/*,UserDetailsService userDetailsService*/) {
+    public SecurityConfig(DataSource dataSource) {
         this.dataSource = dataSource;
-        //this.userDetailsService = userDetailsService;
     }
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,UserDetailsService userDetailsService) throws Exception {
@@ -63,7 +59,6 @@ public class SecurityConfig {
                         .csrfTokenRequestHandler(requestHandler)
                         .ignoringRequestMatchers("/auth/**", "/h2-console/**")
                 )
-//                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
@@ -75,20 +70,6 @@ public class SecurityConfig {
                                 "/h2-console/**").permitAll()
                         .anyRequest().authenticated()
                 )
-//                .formLogin(form -> form
-//                        .loginProcessingUrl("/auth/login")
-//                        .successHandler((request, response, authentication) -> {
-//                            response.setStatus(200);
-//                            response.setContentType("application/json");
-//                            response.getWriter().write("{\"message\":\"Login successful\",\"username\":\"" + authentication.getName() + "\"}");
-//                        })
-//                        .failureHandler((request, response, exception) -> {
-//                            response.setStatus(401);
-//                            response.setContentType("application/json");
-//                            response.getWriter().write("{\"error\":\"Bad credentials\"}");
-//                        })
-//                        .permitAll()
-//                )
                 .logout(logout -> logout
                         .logoutUrl("/auth/logout")
                         .deleteCookies("JSESSIONID", "remember-me")
@@ -136,48 +117,25 @@ public class SecurityConfig {
         return http.build();
     }
 
-//    @Bean
-//    public UserDetailsService userDetailsService() {
-//        JdbcUserDetailsManager userDetailsManager = new JdbcUserDetailsManager(dataSource);
-//
-//        userDetailsManager.setUsersByUsernameQuery(
-//                "SELECT username, password, 1 as enabled FROM [USERS] WHERE username = ?"
-//        );
-//
-//        userDetailsManager.setAuthoritiesByUsernameQuery(
-//                "SELECT username, role as authority FROM [USERS] WHERE username = ?"
-//        );
-//
-//        return userDetailsManager;
-//    }
-
     @Bean
-    public UserDetailsService userDetailsService(JdbcTemplate jdbcTemplate) {
+    public UserDetailsService userDetailsService(UserRepository userRepository) {
         return username -> {
-            String sql = "SELECT id, username, password, role FROM [USERS] WHERE username = ?";
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() ->
+                            new UsernameNotFoundException("User not found: " + username));
 
-            return jdbcTemplate.query(sql, (rs, rowNum) -> {
-                        Long id = rs.getLong("id");
-                        String dbUsername = rs.getString("username");
-                        String dbPassword = rs.getString("password");
-                        String dbRole = rs.getString("role");
+            String authority = user.getRole().name().startsWith("ROLE_")
+                    ? user.getRole().name()
+                    : "ROLE_" + user.getRole().name();
 
-                        String authorityWithPrefix = dbRole.startsWith("ROLE_") ? dbRole : "ROLE_" + dbRole;
-
-                        List<SimpleGrantedAuthority> authorities = Collections.singletonList(
-                                new SimpleGrantedAuthority(authorityWithPrefix)
-                        );
-
-                        return new CustomUserDetails(
-                                id,
-                                dbUsername,
-                                dbPassword,
-                                Collections.singletonList(new SimpleGrantedAuthority(authorityWithPrefix))
-                        );
-                    }, username)
-                    .stream()
-                    .findFirst()
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+            return new CustomUserDetails(
+                    user.getId(),
+                    user.getUsername(),
+                    user.getPassword(),
+                    Collections.singletonList(
+                            new SimpleGrantedAuthority(authority)
+                    )
+            );
         };
     }
 

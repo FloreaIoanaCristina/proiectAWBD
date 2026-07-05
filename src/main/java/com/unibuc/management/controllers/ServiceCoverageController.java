@@ -1,9 +1,11 @@
 package com.unibuc.management.controllers;
 
-import com.unibuc.management.dto.validation.ServiceCoverageRequestDTO;
-import com.unibuc.management.entities.ServiceCoverage;
+import com.unibuc.management.dto.request.ServiceCoverageRequestDTO;
+import com.unibuc.management.domain.ServiceCoverage;
+import com.unibuc.management.dto.response.ServiceCoverageResponseDTO;
 import com.unibuc.management.services.ServiceCoverageService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,28 +15,25 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/service-coverages")
+@RequiredArgsConstructor
 public class ServiceCoverageController {
 
     private final ServiceCoverageService serviceCoverageService;
 
-    public ServiceCoverageController(ServiceCoverageService serviceCoverageService) {
-        this.serviceCoverageService = serviceCoverageService;
-    }
-
     @GetMapping
-    public ResponseEntity<List<ServiceCoverage>> getAll() {
+    public ResponseEntity<List<ServiceCoverageResponseDTO>> getAll() {
         return ResponseEntity.ok(serviceCoverageService.getAllCoverages());
     }
 
     @PostMapping
     @PreAuthorize("hasRole('DOCTOR')")
-    public ResponseEntity<ServiceCoverage> create(@Valid @RequestBody ServiceCoverageRequestDTO dto) {
+    public ResponseEntity<ServiceCoverageResponseDTO> create(@Valid @RequestBody ServiceCoverageRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(serviceCoverageService.save(dto));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('DOCTOR')")
-    public ResponseEntity<ServiceCoverage> update(@PathVariable Long id, @Valid @RequestBody ServiceCoverageRequestDTO dto) {
+    public ResponseEntity<ServiceCoverageResponseDTO> update(@PathVariable Long id, @Valid @RequestBody ServiceCoverageRequestDTO dto) {
         return ResponseEntity.ok(serviceCoverageService.updateCoverage(id, dto));
     }
 

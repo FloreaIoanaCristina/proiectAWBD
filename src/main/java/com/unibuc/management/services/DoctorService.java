@@ -1,15 +1,20 @@
 package com.unibuc.management.services;
 
-import com.unibuc.management.dto.validation.DoctorRequestDTO;
-import com.unibuc.management.entities.Doctor;
-import com.unibuc.management.entities.MedicalService;
-import com.unibuc.management.entities.User;
+import com.unibuc.management.dto.request.DoctorRequestDTO;
+import com.unibuc.management.domain.Doctor;
+import com.unibuc.management.domain.MedicalService;
+import com.unibuc.management.domain.User;
+import com.unibuc.management.dto.response.DoctorResponseDTO;
 import com.unibuc.management.exceptions.InvalidActionException;
 import com.unibuc.management.exceptions.ResourceNotFoundException;
+import com.unibuc.management.mappers.AppointmentMapper;
+import com.unibuc.management.mappers.DoctorMapper;
+import com.unibuc.management.mappers.MedicalServiceMapper;
 import com.unibuc.management.repositories.AppointmentRepository;
 import com.unibuc.management.repositories.DoctorRepository;
 import com.unibuc.management.repositories.MedicalServiceRepository;
 import com.unibuc.management.repositories.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,10 +23,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DoctorService {
 
     private final DoctorRepository doctorRepository;
@@ -29,23 +34,13 @@ public class DoctorService {
     private final MedicalServiceRepository medicalServiceRepository;
     private final AppointmentRepository appointmentRepository;
 
-    public DoctorService(DoctorRepository doctorRepository,
-                         UserRepository userRepository,
-                         MedicalServiceRepository medicalServiceRepository,
-                         AppointmentRepository appointmentRepository) {
-        this.doctorRepository = doctorRepository;
-        this.userRepository = userRepository;
-        this.medicalServiceRepository = medicalServiceRepository;
-        this.appointmentRepository = appointmentRepository;
-    }
-
-    public Doctor saveDoctor(DoctorRequestDTO doctorRequestDTO) {
+    public DoctorResponseDTO createDoctor(DoctorRequestDTO doctorRequestDTO) {
         log.info("Se salvează/actualizează direct entitatea Doctor cu numele: {}", doctorRequestDTO.getName());
 
         Doctor doctor = new Doctor();
         doctor.setName(doctorRequestDTO.getName());
         doctor.setOffice(doctorRequestDTO.getOffice());
-        doctor.setNumberOfPtodays(doctorRequestDTO.getNumberOfPtodays());
+        doctor.setNumberOfPTOdays(doctorRequestDTO.getNumberOfPtodays());
 
         Integer serviceId = doctorRequestDTO.getMedicalServiceId();
 
@@ -63,33 +58,37 @@ public class DoctorService {
             log.debug("Relația cu User ID-ul '{}' a fost stabilită cu succes.", doctorRequestDTO.getUserId());
         }
 
-        return doctorRepository.save(doctor);
+        Doctor savedDoctor = doctorRepository.save(doctor);
+        return DoctorMapper.toResponseDTO(savedDoctor);
     }
 
     public Doctor getDoctorById(Integer doctorId) {
         log.debug("Căutare doctor după ID: {}", doctorId);
-        return doctorRepository.findById(doctorId)
-            .orElseThrow(() -> {
-                log.error("Eroare interogare: Doctorul cu ID-ul {} nu a fost găsit în sistem.", doctorId);
-                return new ResourceNotFoundException("Doctorul cu ID-ul " + doctorId + " nu a fost găsit.");
-            });
+        Doctor doctor = doctorRepository.findById(doctorId)
+                .orElseThrow(() -> {
+                    log.error("Eroare interogare: Doctorul cu ID-ul {} nu a fost găsit în sistem.", doctorId);
+                    return new ResourceNotFoundException("Doctorul cu ID-ul " + doctorId + " nu a fost găsit.");
+                });
+        return doctor;
     }
 
-    public List<Doctor> getAllDoctors() {
+    public List<DoctorResponseDTO> getAllDoctors() {
         log.debug("Se preia lista completă a doctorilor.");
         List<Doctor> doctors = doctorRepository.findAll();
         log.debug("S-au găsit {} doctori în sistem.", doctors.size());
-        return doctors;
+        return doctors.stream()
+                .map(DoctorMapper::toResponseDTO)
+                .toList();
     }
 
     @Transactional
-    public Doctor updateDoctor(Integer id, DoctorRequestDTO doctorRequestDTO) {
+    public DoctorResponseDTO updateDoctor(Integer id, DoctorRequestDTO doctorRequestDTO) {
         log.debug("Se solicită actualizarea detaliilor pentru doctorul cu ID-ul: {}", id);
         Doctor existingDoctor = getDoctorById(id);
 
         existingDoctor.setName(doctorRequestDTO.getName());
         existingDoctor.setOffice(doctorRequestDTO.getOffice());
-        existingDoctor.setNumberOfPtodays(doctorRequestDTO.getNumberOfPtodays());
+        existingDoctor.setNumberOfPTOdays(doctorRequestDTO.getNumberOfPtodays());
         Integer serviceId = doctorRequestDTO.getMedicalServiceId();
 
         MedicalService medicalService = medicalServiceRepository.findById(serviceId)
@@ -101,7 +100,7 @@ public class DoctorService {
         existingDoctor.setMedicalService(medicalService);
         Doctor updatedDoctor = doctorRepository.save(existingDoctor);
         log.info("Doctorul cu ID-ul {} a fost actualizat cu succes (Nume nou: {}).", id, updatedDoctor.getName());
-        return updatedDoctor;
+        return DoctorMapper.toResponseDTO(updatedDoctor);
     }
 
     @Transactional
@@ -119,10 +118,10 @@ public class DoctorService {
         var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
         boolean isDoctor = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"));
 
-        if (isDoctor) {
-            if (user != null && !user.getUsername().equals(currentUsername)) {
-                throw new InvalidActionException("Nu aveți permisiunea să ștergeți profilul unui alt medic care are cont activ.");
-            }
+        if (isDoctor && user != null &&
+                !user.getUsername().equals(currentUsername)) {
+            throw new InvalidActionException(
+                    "Nu aveți permisiunea să ștergeți profilul unui alt medic care are cont activ.");
         }
 
         if (user != null) {
@@ -136,11 +135,6 @@ public class DoctorService {
         log.info("Doctorul cu ID-ul {} a fost eliminat complet din sistem.", id);
     }
 
-    public Optional<Doctor> getDoctorByMedicalService(Integer medicalServiceId) {
-        log.debug("Căutare doctor asociat serviciului medical cu ID: {}", medicalServiceId);
-        return doctorRepository.findByMedicalServiceId(medicalServiceId);
-    }
-
     public Doctor getDoctorByUsername(String username) {
         log.debug("Căutare doctor după username-ul de autentificare: {}", username);
         return doctorRepository.findByUserUsername(username)
@@ -150,8 +144,8 @@ public class DoctorService {
                 });
     }
 
-    public Page<Doctor> getDoctorsPaged(Pageable pageable) {
+    public Page<DoctorResponseDTO> getDoctorsPaged(Pageable pageable) {
         log.debug("Se solicită lista paginată de doctori folosind structura Pageable.");
-        return doctorRepository.findAllWithServicesPaged(pageable);
+        return doctorRepository.findAllWithServicesPaged(pageable).map(DoctorMapper::toResponseDTO);
     }
 }

@@ -1,13 +1,17 @@
 package com.unibuc.management.services;
 
-import com.unibuc.management.dto.validation.PaymentRequestDTO;
-import com.unibuc.management.entities.Appointment;
-import com.unibuc.management.entities.MedicalService;
-import com.unibuc.management.entities.Patient;
-import com.unibuc.management.entities.Payment;
-import com.unibuc.management.entities.ServiceCoverage;
+import com.unibuc.management.dto.request.PaymentRequestDTO;
+import com.unibuc.management.domain.Appointment;
+import com.unibuc.management.domain.MedicalService;
+import com.unibuc.management.domain.Patient;
+import com.unibuc.management.domain.Payment;
+import com.unibuc.management.domain.ServiceCoverage;
+import com.unibuc.management.dto.response.PaymentResponseDTO;
 import com.unibuc.management.exceptions.ResourceNotFoundException;
+import com.unibuc.management.mappers.PatientMapper;
+import com.unibuc.management.mappers.PaymentMapper;
 import com.unibuc.management.repositories.*;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,25 +23,12 @@ import java.util.Optional;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class PaymentService {
 
-    private final PatientRepository patientRepository;
-    private final MedicalServiceRepository medicalServiceRepository;
     private final ServiceCoverageRepository serviceCoverageRepository;
     private final PaymentRepository paymentRepository;
     private final AppointmentRepository appointmentRepository;
-
-    public PaymentService(PatientRepository patientRepository,
-                          MedicalServiceRepository medicalServiceRepository,
-                          ServiceCoverageRepository serviceCoverageRepository,
-                          PaymentRepository paymentRepository,
-                          AppointmentRepository appointmentRepository) {
-        this.patientRepository = patientRepository;
-        this.medicalServiceRepository = medicalServiceRepository;
-        this.serviceCoverageRepository = serviceCoverageRepository;
-        this.paymentRepository = paymentRepository;
-        this.appointmentRepository = appointmentRepository;
-    }
 
     public Payment createPaymentForPatient(Patient patient, MedicalService service, Appointment appointment) {
         log.debug("Inițiere calcul plată în așteptare pentru pacientul ID: {}, serviciul medical ID: {}", patient.getId(), service.getId());
@@ -81,9 +72,11 @@ public class PaymentService {
         log.debug("Entitatea Payment a fost generată cu status PENDING și suma: {} RON.", price);
         return payment;
     }
-    public List<Payment> getAllPayments() {
+    public List<PaymentResponseDTO> getAllPayments() {
         log.debug("Se preia lista completă a plăților.");
-        return paymentRepository.findAll();
+        return paymentRepository.findAll()
+            .stream().map(PaymentMapper::toResponseDTO)
+            .toList();
     }
 
     public Payment getPaymentById(Long id) {
@@ -95,12 +88,14 @@ public class PaymentService {
             });
     }
 
-    public List<Payment> getPaymentsByPatientId(Long patientId) {
+    public List<PaymentResponseDTO> getPaymentsByPatientId(Integer patientId) {
         log.debug("Se preia istoricul plăților pentru pacientul cu ID-ul: {}", patientId);
-        return paymentRepository.findByPatientId(patientId);
+        return paymentRepository.findByPatientId(patientId)
+                .stream().map(PaymentMapper::toResponseDTO)
+                .toList();
     }
     @Transactional
-    public Payment savePayment(PaymentRequestDTO dto) {
+    public PaymentResponseDTO savePayment(PaymentRequestDTO dto) {
         log.info("Se înregistrează o plată nouă din DTO pentru suma: {}", dto.getAmount());
 
         Appointment appointment = appointmentRepository.findById(dto.getAppointmentId())
@@ -122,11 +117,11 @@ public class PaymentService {
         Payment savedPayment = paymentRepository.save(payment);
         log.info("Plata a fost înregistrată cu succes (ID alocat: {}, Sumă: {} RON)",
                 savedPayment.getId(), savedPayment.getAmount());
-        return savedPayment;
+        return PaymentMapper.toResponseDTO(savedPayment);
     }
 
     @Transactional
-    public Payment updatePayment(Long id, PaymentRequestDTO dto) {
+    public PaymentResponseDTO updatePayment(Long id, PaymentRequestDTO dto) {
         log.debug("Se solicită modificarea plății cu ID-ul: {}", id);
 
         Payment existingPayment = getPaymentById(id);
@@ -154,7 +149,7 @@ public class PaymentService {
 
         Payment updatedPayment = paymentRepository.save(existingPayment);
         log.info("Plata cu ID-ul {} a fost actualizată cu succes. Status curent: {}", id, updatedPayment.getStatus());
-        return updatedPayment;
+        return PaymentMapper.toResponseDTO(updatedPayment);
     }
 
     @Transactional

@@ -1,10 +1,13 @@
 package com.unibuc.management.services;
 
-import com.unibuc.management.dto.validation.DoctorRequestDTO;
-import com.unibuc.management.entities.Doctor;
-import com.unibuc.management.entities.MedicalService;
-import com.unibuc.management.entities.User;
+import com.unibuc.management.dto.request.DoctorRequestDTO;
+import com.unibuc.management.domain.Doctor;
+import com.unibuc.management.domain.MedicalService;
+import com.unibuc.management.domain.User;
+import com.unibuc.management.dto.response.DoctorResponseDTO;
+import com.unibuc.management.exceptions.InvalidActionException;
 import com.unibuc.management.exceptions.ResourceNotFoundException;
+import com.unibuc.management.repositories.AppointmentRepository;
 import com.unibuc.management.repositories.DoctorRepository;
 import com.unibuc.management.repositories.MedicalServiceRepository;
 import com.unibuc.management.repositories.UserRepository;
@@ -13,10 +16,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,88 +26,217 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith({MockitoExtension.class, SpringExtension.class})
+@ExtendWith(MockitoExtension.class)
 class DoctorServiceTest {
-
-    @Mock
-    private DoctorRepository doctorRepository;
-
-    @Mock
-    private UserRepository userRepository;
-    @Mock
-    private MedicalServiceRepository medicalServiceRepository;
 
     @InjectMocks
     private DoctorService doctorService;
 
+    @Mock private DoctorRepository doctorRepository;
+    @Mock private UserRepository userRepository;
+    @Mock private MedicalServiceRepository medicalServiceRepository;
+    @Mock private AppointmentRepository appointmentRepository;
+
     private Doctor doctor;
+    private DoctorRequestDTO dto;
+    private MedicalService medicalService;
+    private User user;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        doctorService = new DoctorService(doctorRepository, userRepository,medicalServiceRepository);
+
+        medicalService = new MedicalService();
+        medicalService.setId(100);
+
+        user = new User();
+        user.setId(1L);
+        user.setUsername("doc");
 
         doctor = new Doctor();
         doctor.setId(1);
-        doctor.setName("Dr. Smith");
-        doctor.setOffice("Room 101");
-        doctor.setUser(new User());
+        doctor.setName("Dr. House");
+        doctor.setOffice("A1");
+        doctor.setNumberOfPTOdays(10);
+        doctor.setMedicalService(medicalService);
+        doctor.setUser(user);
+
+        dto = new DoctorRequestDTO();
+        dto.setName("Dr. House");
+        dto.setOffice("A1");
+        dto.setNumberOfPtodays(10);
+        dto.setMedicalServiceId(100);
+    }
+
+    // ---------------- CREATE ----------------
+
+    @Test
+    void createDoctor_shouldCreateSuccessfully() {
+
+        dto.setUserId(1L);
+
+        when(medicalServiceRepository.findById(100))
+                .thenReturn(Optional.of(medicalService));
+
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.of(user));
+
+        when(doctorRepository.save(any()))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        DoctorResponseDTO result = doctorService.createDoctor(dto);
+
+        assertEquals("Dr. House", result.getName());
+        assertEquals(user.getId(), result.getUserId());
+        assertEquals(medicalService, result.getMedicalService());
     }
 
     @Test
-    void testGetDoctorById_NotFound() {
-        when(doctorRepository.findById(1)).thenReturn(Optional.empty());
+    void createDoctor_shouldThrow_whenMedicalServiceNotFound() {
 
-        assertThrows(ResourceNotFoundException.class, () -> doctorService.getDoctorById(1));
+        when(medicalServiceRepository.findById(100))
+                .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> doctorService.createDoctor(dto));
+    }
+
+    // ---------------- GET ----------------
+
+    @Test
+    void getDoctorById_shouldReturnDoctor() {
+
+        when(doctorRepository.findById(1))
+                .thenReturn(Optional.of(doctor));
+
+        Doctor result = doctorService.getDoctorById(1);
+
+        assertEquals(1, result.getId());
     }
 
     @Test
-    void testUpdateDoctor_Success() {
-        MedicalService mockService = new MedicalService();
-        mockService.setId(5);
-        DoctorRequestDTO dto = new DoctorRequestDTO();
-        dto.setName("New Name");
-        dto.setOffice("Cabinet 102");
-        dto.setNumberOfPtodays(25);
-        dto.setMedicalServiceId(5);
+    void getDoctorById_shouldThrow_whenNotFound() {
+
+        when(doctorRepository.findById(1))
+                .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> doctorService.getDoctorById(1));
+    }
+
+    @Test
+    void getAllDoctors_shouldReturnList() {
+
+        when(doctorRepository.findAll())
+                .thenReturn(List.of(doctor));
+
+        List<DoctorResponseDTO> result = doctorService.getAllDoctors();
+
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void getDoctorByUsername_shouldReturnDoctor() {
+
+        when(doctorRepository.findByUserUsername("doc"))
+                .thenReturn(Optional.of(doctor));
+
+        Doctor result = doctorService.getDoctorByUsername("doc");
+
+        assertEquals(1, result.getId());
+    }
+
+    @Test
+    void getDoctorsPaged_shouldReturnPage() {
+
+        Page<Doctor> page = new PageImpl<>(List.of(doctor));
+
+        when(doctorRepository.findAllWithServicesPaged(any()))
+                .thenReturn(page);
+
+        Page<DoctorResponseDTO> result = doctorService.getDoctorsPaged(Pageable.unpaged());
+
+        assertEquals(1, result.getTotalElements());
+    }
+
+    // ---------------- UPDATE ----------------
+
+    @Test
+    void updateDoctor_shouldUpdateSuccessfully() {
 
         when(doctorRepository.findById(1)).thenReturn(Optional.of(doctor));
-        when(medicalServiceRepository.findById(5)).thenReturn(Optional.of(mockService));
-        when(doctorRepository.save(any(Doctor.class))).thenReturn(doctor);
+        when(medicalServiceRepository.findById(100))
+                .thenReturn(Optional.of(medicalService));
 
-        Doctor result = doctorService.updateDoctor(1, dto);
+        when(doctorRepository.save(any()))
+                .thenAnswer(inv -> inv.getArgument(0));
 
-        assertNotNull(result);
-        assertEquals("New Name", doctor.getName(), "Numele doctorului existent ar trebui să fie actualizat cu cel din DTO.");
-        assertEquals("Cabinet 102", doctor.getOffice(), "Cabinetul ar trebui să fie actualizat.");
-        assertEquals(25, doctor.getNumberOfPtodays(), "Zilele de concediu ar trebui să fie actualizate.");
-        assertEquals(mockService, doctor.getMedicalService(), "Relația cu Serviciul Medical ar trebui să fie mapată corect.");
+        DoctorResponseDTO result = doctorService.updateDoctor(1, dto);
 
-        verify(doctorRepository).save(doctor);
-        verify(medicalServiceRepository).findById(5);
+        assertEquals("Dr. House", result.getName());
+        assertEquals(medicalService, result.getMedicalService());
     }
 
     @Test
-    void testDeleteDoctor_Success() {
+    void updateDoctor_shouldThrow_whenNotFound() {
+
+        when(doctorRepository.findById(1))
+                .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> doctorService.updateDoctor(1, dto));
+    }
+
+    // ---------------- DELETE ----------------
+
+    @Test
+    void deleteDoctor_shouldThrow_whenHasAppointments() {
+
         when(doctorRepository.findById(1)).thenReturn(Optional.of(doctor));
+        when(appointmentRepository.countByDoctorId(1)).thenReturn(2L);
 
-        assertDoesNotThrow(() -> doctorService.deleteDoctor(1));
-
-        verify(userRepository, times(1)).delete(any(User.class));
+        assertThrows(InvalidActionException.class,
+                () -> doctorService.deleteDoctor(1));
     }
 
     @Test
-    void testGetDoctorsPaged() {
-        Pageable pageable = PageRequest.of(0, 10, Sort.by("name").ascending());
-        Page<Doctor> doctorPage = new PageImpl<>(List.of(doctor));
+    void deleteDoctor_shouldDeleteUser_whenUserExists() {
 
-        when(doctorRepository.findAll(any(Pageable.class))).thenReturn(doctorPage);
+        when(doctorRepository.findById(1)).thenReturn(Optional.of(doctor));
+        when(appointmentRepository.countByDoctorId(1)).thenReturn(0L);
 
-        Page<Doctor> result = doctorService.getDoctorsPaged(pageable);
+        mockAuth("doc", "ROLE_DOCTOR");
 
-        assertNotNull(result);
-        assertEquals(1, result.getContent().size());
-        assertEquals("Dr. Smith", result.getContent().get(0).getName());
-        verify(doctorRepository).findAll(any(Pageable.class));
+        doctorService.deleteDoctor(1);
+
+        verify(userRepository).delete(user);
+    }
+
+    @Test
+    void deleteDoctor_shouldDeleteDoctor_whenNoUser() {
+
+        Doctor noUserDoctor = new Doctor();
+        noUserDoctor.setId(2);
+        noUserDoctor.setUser(null);
+
+        when(doctorRepository.findById(2)).thenReturn(Optional.of(noUserDoctor));
+        when(appointmentRepository.countByDoctorId(2)).thenReturn(0L);
+
+        doctorService.deleteDoctor(2);
+
+        verify(doctorRepository).delete(noUserDoctor);
+    }
+
+    // ---------------- SECURITY HELPER ----------------
+
+    private void mockAuth(String username, String role) {
+        var auth = mock(org.springframework.security.core.Authentication.class);
+
+        when(auth.getName()).thenReturn(username);
+        when(auth.getAuthorities()).thenAnswer(inv -> List.of(
+                (org.springframework.security.core.GrantedAuthority)
+                        () -> role
+        ));
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
     }
 }

@@ -1,6 +1,6 @@
 package com.unibuc.management.repositories;
 
-import com.unibuc.management.entities.User;
+import com.unibuc.management.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

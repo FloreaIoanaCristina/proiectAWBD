@@ -1,10 +1,12 @@
 package com.unibuc.management.controllers;
 
-import com.unibuc.management.dto.validation.InsuranceProviderRequestDTO;
-import com.unibuc.management.entities.InsuranceProvider;
+import com.unibuc.management.dto.request.InsuranceProviderRequestDTO;
+import com.unibuc.management.domain.InsuranceProvider;
+import com.unibuc.management.dto.response.InsuranceProviderResponseDTO;
+import com.unibuc.management.mappers.InsuranceProviderMapper;
 import com.unibuc.management.services.InsuranceProviderService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,17 +20,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/insurance-providers")
+@RequiredArgsConstructor
 public class InsuranceProviderController {
 
     private final InsuranceProviderService insuranceProviderService;
 
-    @Autowired
-    public InsuranceProviderController(InsuranceProviderService insuranceProviderService) {
-        this.insuranceProviderService = insuranceProviderService;
-    }
-
     @GetMapping
-    public ResponseEntity<Page<InsuranceProvider>> getAllInsuranceProviders(
+    public ResponseEntity<Page<InsuranceProviderResponseDTO>> getAllInsuranceProviders(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
             @RequestParam(defaultValue = "name,asc") String[] sort) {
@@ -43,25 +41,26 @@ public class InsuranceProviderController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<InsuranceProvider>> getAllUnpaged() {
+    public ResponseEntity<List<InsuranceProviderResponseDTO>> getAllUnpaged() {
         return ResponseEntity.ok(insuranceProviderService.getAllInsuranceProviders());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<InsuranceProvider> getInsuranceProviderById(@PathVariable Integer id) {
-        return ResponseEntity.ok(insuranceProviderService.getInsuranceProviderById(id));
+    public ResponseEntity<InsuranceProviderResponseDTO> getInsuranceProviderById(@PathVariable Integer id) {
+        InsuranceProvider insuranceProvider = insuranceProviderService.getInsuranceProviderById(id);
+        return ResponseEntity.ok(InsuranceProviderMapper.toResponseDTO(insuranceProvider));
     }
 
     @PostMapping
     @PreAuthorize("hasRole('DOCTOR')")
-    public ResponseEntity<InsuranceProvider> createInsuranceProvider(@Valid @RequestBody InsuranceProviderRequestDTO dto) {
+    public ResponseEntity<InsuranceProviderResponseDTO> createInsuranceProvider(@Valid @RequestBody InsuranceProviderRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(insuranceProviderService.createInsuranceProvider(dto));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('DOCTOR')")
-    public ResponseEntity<InsuranceProvider> updateInsuranceProvider(@PathVariable Integer id,
+    public ResponseEntity<InsuranceProviderResponseDTO> updateInsuranceProvider(@PathVariable Integer id,
                                                                      @Valid @RequestBody InsuranceProviderRequestDTO dto) {
         return ResponseEntity.ok(insuranceProviderService.updateInsuranceProvider(id, dto));
     }

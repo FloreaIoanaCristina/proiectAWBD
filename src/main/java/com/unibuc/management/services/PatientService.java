@@ -1,17 +1,19 @@
 package com.unibuc.management.services;
 
-import com.unibuc.management.dto.validation.PatientRequestDTO;
-import com.unibuc.management.entities.InsuranceProvider;
-import com.unibuc.management.entities.Patient;
-import com.unibuc.management.entities.User;
+import com.unibuc.management.dto.request.PatientRequestDTO;
+import com.unibuc.management.domain.InsuranceProvider;
+import com.unibuc.management.domain.Patient;
+import com.unibuc.management.domain.User;
+import com.unibuc.management.dto.response.PatientResponseDTO;
 import com.unibuc.management.exceptions.InvalidActionException;
 import com.unibuc.management.exceptions.ResourceNotFoundException;
+import com.unibuc.management.mappers.PatientMapper;
 import com.unibuc.management.repositories.AppointmentRepository;
 import com.unibuc.management.repositories.InsuranceProviderRepository;
 import com.unibuc.management.repositories.PatientRepository;
 import com.unibuc.management.repositories.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,6 +26,7 @@ import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class PatientService {
 
     private final PatientRepository patientRepository;
@@ -31,20 +34,15 @@ public class PatientService {
     private final InsuranceProviderRepository insuranceProviderRepository;
     private final AppointmentRepository appointmentRepository;
 
-    @Autowired
-    public PatientService(PatientRepository patientRepository, UserRepository userRepository, InsuranceProviderRepository insuranceProviderRepository, AppointmentRepository appointmentRepository) {
-        this.patientRepository = patientRepository;
-        this.userRepository = userRepository;
-        this.insuranceProviderRepository = insuranceProviderRepository;
-        this.appointmentRepository = appointmentRepository;
-    }
-    public Page<Patient> getAllPatientsPaged(Pageable pageable) {
+    public Page<PatientResponseDTO> getAllPatientsPaged(Pageable pageable) {
         log.debug("Se preia lista paginată a pacienților.");
-        return patientRepository.findAll(pageable);
+        return patientRepository.findAll(pageable).map(PatientMapper::toResponseDTO);
     }
-    public List<Patient> getAllPatients() {
+    public List<PatientResponseDTO> getAllPatients() {
         log.debug("Se preia lista completă a pacienților.");
-        return patientRepository.findAll();
+        return patientRepository.findAll()
+                .stream().map(PatientMapper::toResponseDTO)
+                .toList();
     }
 
     public Patient getPatientById(Integer id) {
@@ -65,7 +63,8 @@ public class PatientService {
             });
     }
 
-    public Patient createPatient(PatientRequestDTO patientDto) {
+    @Transactional
+    public PatientResponseDTO createPatient(PatientRequestDTO patientDto) {
         log.info("Se înregistrează un pacient nou cu numele: {}", patientDto.getName());
         validateAdultAge(patientDto.getBirthDate());
 
@@ -91,11 +90,11 @@ public class PatientService {
 
         Patient savedPatient = patientRepository.save(patient);
         log.info("Pacientul a fost creat cu succes cu ID-ul: {}", savedPatient.getId());
-        return savedPatient;
+        return PatientMapper.toResponseDTO(savedPatient);
     }
 
     @Transactional
-    public Patient updatePatient(Integer id, PatientRequestDTO patientDto) {
+    public PatientResponseDTO updatePatient(Integer id, PatientRequestDTO patientDto) {
         log.debug("Se solicită actualizarea datelor pentru pacientul cu ID-ul: {}", id);
 
         Patient existingPatient = getPatientById(id);
@@ -118,7 +117,7 @@ public class PatientService {
 
         Patient updatedPatient = patientRepository.save(existingPatient);
         log.info("Datele pacientului cu ID-ul {} au fost actualizate cu succes.", id);
-        return updatedPatient;
+        return PatientMapper.toResponseDTO(updatedPatient);
     }
 
     @Transactional

@@ -1,11 +1,9 @@
-package com.unibuc.management.dto.validation;
+package com.unibuc.management.dto.request;
 
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 
 @Data
 public class PtoRequestDTO {
@@ -18,5 +16,4 @@ public class PtoRequestDTO {
 
     @NotNull(message = "Data de sfârșit este obligatorie.")
     private LocalDate endDate;
-
 }

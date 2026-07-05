@@ -1,23 +1,38 @@
 package com.unibuc.management.services;
 
+import com.unibuc.management.dto.LoginRequest;
 import com.unibuc.management.dto.RegisterRequest;
-import com.unibuc.management.dto.validation.DoctorRequestDTO;
-import com.unibuc.management.dto.validation.PatientRequestDTO;
-import com.unibuc.management.entities.*;
+import com.unibuc.management.dto.request.DoctorRequestDTO;
+import com.unibuc.management.dto.request.PatientRequestDTO;
+import com.unibuc.management.domain.*;
 import com.unibuc.management.exceptions.InvalidActionException;
+import com.unibuc.management.exceptions.ResourceNotFoundException;
 import com.unibuc.management.repositories.MedicalServiceRepository;
 import com.unibuc.management.repositories.UserRepository;
 import com.unibuc.management.security.Role;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -25,18 +40,8 @@ public class AuthService {
     private final PatientService patientService;
     private final DoctorService doctorService;
     private final MedicalServiceRepository medicalServiceRepository;
-
-    public AuthService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder,
-                       PatientService patientService,
-                       DoctorService doctorService,
-                       MedicalServiceRepository medicalServiceRepository) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.patientService = patientService;
-        this.doctorService = doctorService;
-        this.medicalServiceRepository = medicalServiceRepository;
-    }
+    private final AuthenticationManager authenticationManager;
+    private final SecurityContextRepository securityContextRepository;
 
     @Transactional
     public void registerUser(RegisterRequest request) {
@@ -117,9 +122,108 @@ public class AuthService {
         doctorDTO.setMedicalServiceId(service.getId());
         doctorDTO.setUserId(user.getId());
 
-        doctorService.saveDoctor(doctorDTO);
+        doctorService.createDoctor(doctorDTO);
 
         log.debug("Profilul de Medic asociat serviciului '{}' a fost salvat pentru: {}",
                 service.getName(), user.getUsername());
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> login(LoginRequest request,
+                                     HttpServletRequest httpRequest,
+                                     HttpServletResponse httpResponse) {
+
+        log.debug("Autentificare pentru utilizatorul '{}'.", request.getUsername());
+
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getUsername(),
+                        request.getPassword()
+                )
+        );
+
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+        securityContextRepository.saveContext(context, httpRequest, httpResponse);
+
+        String role = authentication.getAuthorities()
+                .iterator()
+                .next()
+                .getAuthority();
+
+        Long profileId = null;
+
+        if (role.contains("PATIENT")) {
+
+            profileId = patientService
+                    .getPatientByUsername(request.getUsername())
+                    .getId()
+                    .longValue();
+
+        } else if (role.contains("DOCTOR")) {
+
+            profileId = doctorService
+                    .getDoctorByUsername(request.getUsername())
+                    .getId()
+                    .longValue();
+        }
+
+        List<String> roles = authentication.getAuthorities()
+                .stream()
+                .map(authority -> authority.getAuthority())
+                .toList();
+
+        log.info("Utilizatorul '{}' s-a autentificat cu succes.", request.getUsername());
+
+        return Map.of(
+                "message", "Login successful",
+                "username", request.getUsername(),
+                "roles", roles,
+                "profileId", profileId
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getCurrentUser(String username) {
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> {
+                    log.error("Utilizatorul '{}' nu a fost găsit.", username);
+                    return new ResourceNotFoundException("Userul nu a fost găsit.");
+                });
+
+        Map<String, Object> userData = new HashMap<>();
+
+        userData.put("username", user.getUsername());
+        userData.put("role", user.getRole());
+
+        if (user.getRole() == Role.PATIENT) {
+
+            Patient patient = patientService.getPatientByUsername(username);
+
+            userData.put("patientId", patient.getId());
+
+        } else if (user.getRole() == Role.DOCTOR) {
+
+            Doctor doctor = doctorService.getDoctorByUsername(username);
+
+            userData.put("doctorId", doctor.getId());
+        }
+        return userData;
+    }
+
+    @Transactional
+    public void deleteUser(String username) {
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> {
+                    log.error("Ștergere eșuată. Utilizatorul '{}' nu există.", username);
+                    return new ResourceNotFoundException("Userul nu a fost găsit.");
+                });
+
+        userRepository.delete(user);
+
+        log.info("Utilizatorul '{}' a fost șters.", username);
     }
 }

@@ -1,14 +1,17 @@
 package com.unibuc.management.services;
 
-import com.unibuc.management.dto.validation.AppointmentRequestDTO;
-import com.unibuc.management.entities.*;
+import com.unibuc.management.dto.request.AppointmentRequestDTO;
+import com.unibuc.management.domain.*;
+import com.unibuc.management.dto.response.AppointmentResponseDTO;
+import com.unibuc.management.dto.response.DoctorResponseDTO;
+import com.unibuc.management.dto.response.PaymentResponseDTO;
+import com.unibuc.management.mappers.AppointmentMapper;
 import com.unibuc.management.repositories.*;
 import com.unibuc.management.security.CustomUserDetails;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -21,37 +24,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@RequiredArgsConstructor
 @Slf4j
 @Service
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final PaidTimeOffRepository ptoRepository;
+    private final DoctorService doctorService;
     private final DoctorRepository doctorRepository;
+    private final PatientService patientService;
     private final PatientRepository patientRepository;
     private final PaymentService paymentService;
     private final MedicalServiceService medicalServiceService;
-
     private final MedicalServiceRepository medicalServiceRepository;
-    @Autowired
-    public AppointmentService(AppointmentRepository appointmentRepository,
-                              PaidTimeOffRepository ptoRepository,
-                              DoctorRepository doctorRepository,
-                              PatientRepository patientRepository,
-                              PaymentService paymentService,
-                              MedicalServiceService medicalServiceService,
-                              MedicalServiceRepository medicalServiceRepository) {
-        this.appointmentRepository = appointmentRepository;
-        this.ptoRepository = ptoRepository;
-        this.doctorRepository = doctorRepository;
-        this.patientRepository = patientRepository;
-        this.paymentService = paymentService;
-        this.medicalServiceService = medicalServiceService;
-        this.medicalServiceRepository = medicalServiceRepository;
-    }
+    private final AppointmentMapper appointmentMapper;
 
     @Transactional
-    public Appointment createAppointment(Authentication authentication, AppointmentRequestDTO dto) {
+    public AppointmentResponseDTO createAppointment(Authentication authentication, AppointmentRequestDTO dto) {
         boolean isPatient = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_PATIENT"));
 
@@ -74,7 +64,7 @@ public class AppointmentService {
         MedicalService medicalService = medicalServiceRepository.findById(dto.getMedicalServiceId())
                 .orElseThrow(() -> new EntityNotFoundException("Serviciul medical nu a fost găsit."));
 
-        List<OffsetDateTime> availableSlots = getAvailableTimeSlots(medicalService, dto.getDoctorId(), dto.getAppointmentFrom().toLocalDate().toString());
+        List<OffsetDateTime> availableSlots = getAvailableTimeSlots(dto.getMedicalServiceId(), dto.getDoctorId(), dto.getAppointmentFrom().toLocalDate().toString());
         boolean slotAvailable = availableSlots.stream().anyMatch(slot ->
                 slot.truncatedTo(ChronoUnit.MINUTES).equals(dto.getAppointmentFrom().truncatedTo(ChronoUnit.MINUTES))
         );
@@ -105,13 +95,140 @@ public class AppointmentService {
         Appointment savedAppointment = appointmentRepository.save(appointment);
         log.info("Programarea cu ID-ul {} a fost salvată cu succes în sistem.", savedAppointment.getId());
 
-        return savedAppointment;
+        return appointmentMapper.toDto(savedAppointment);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AppointmentResponseDTO> getAppointmentsByPatientId(Integer patientId,
+                                                        Pageable pageable,
+                                                        Authentication authentication) {
+
+        log.debug("Se solicită programările pacientului ID {}", patientId);
+
+        String currentUsername = authentication.getName();
+
+        if (authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_PATIENT"))) {
+
+            Patient currentPatient = patientService.getPatientByUsername(currentUsername);
+
+            if (!currentPatient.getId().equals(patientId)) {
+                log.error("Pacientul '{}' a încercat să acceseze programările altui pacient.",
+                        currentUsername);
+                throw new UnauthorizedAccessException(
+                        "Nu aveți dreptul să vizualizați aceste programări.");
+            }
+            return appointmentRepository.findByPatientId(patientId, pageable).map(appointmentMapper::toDto);
+        }
+
+        if (authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"))) {
+
+            Doctor currentDoctor = doctorService.getDoctorByUsername(currentUsername);
+
+            Page<Appointment> appointments =
+                    appointmentRepository.findByPatientId(patientId, pageable);
+
+            List<Appointment> filtered = appointments.getContent().stream()
+                    .filter(a -> a.getMedicalService()
+                            .getMedicalServiceDoctors()
+                            .stream()
+                            .anyMatch(d -> d.getId().equals(currentDoctor.getId())))
+                    .toList();
+
+            return new PageImpl<>(
+                    filtered.stream()
+                            .map(appointmentMapper::toDto)
+                            .toList(),
+                    pageable,
+                    filtered.size()
+            );
+        }
+
+        throw new UnauthorizedAccessException("Acces interzis.");
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AppointmentResponseDTO> getAppointmentsByDoctorId(Integer doctorId,
+                                                       Pageable pageable,
+                                                       Authentication authentication) {
+
+        log.debug("Se solicită programările medicului ID {}", doctorId);
+
+        Doctor currentDoctor =
+                doctorService.getDoctorByUsername(authentication.getName());
+
+        if (!currentDoctor.getId().equals(doctorId)) {
+
+            log.error("Doctorul '{}' a încercat să acceseze programările altui doctor.",
+                    authentication.getName());
+
+            throw new UnauthorizedAccessException(
+                    "Nu aveți dreptul să vizualizați aceste programări.");
+        }
+
+        return appointmentRepository.findByDoctorId(doctorId, pageable).map(appointmentMapper::toDto);
     }
 
     @Transactional
-    public void submitFeedback(Integer appointmentId, float rating, Integer currentPatientId) {
-        log.debug("Se procesează trimiterea de feedback pentru programarea ID: {} de către pacientul ID: {}",
-                appointmentId, currentPatientId);
+    public AppointmentResponseDTO updateAppointment(
+            Integer appointmentId,
+            OffsetDateTime appointmentFrom,
+            Authentication authentication) {
+
+        log.info("Se actualizează programarea ID {}", appointmentId);
+
+        if (appointmentFrom.isBefore(OffsetDateTime.now())) {
+            throw new InvalidActionException(
+                    "Nu puteți muta o programare în trecut.");
+        }
+
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Programarea cu ID-ul " + appointmentId + " nu a fost găsită."));
+
+        validateAppointmentOwnership(appointment, authentication);
+
+        MedicalService medicalService = appointment.getMedicalService();
+
+        Integer doctorId =
+                appointment.getDoctor() != null
+                        ? appointment.getDoctor().getId()
+                        : null;
+
+        List<OffsetDateTime> availableSlots =
+                getAvailableTimeSlots(
+                        medicalService.getId(),
+                        doctorId,
+                        appointmentFrom.toLocalDate().toString());
+
+        boolean slotAvailable =
+                availableSlots.stream().anyMatch(slot ->
+                        slot.truncatedTo(ChronoUnit.MINUTES)
+                                .equals(appointmentFrom.truncatedTo(ChronoUnit.MINUTES)));
+
+        if (!slotAvailable) {
+            throw new InvalidActionException(
+                    "Slotul selectat nu mai este disponibil.");
+        }
+
+        appointment.setAppointmentFrom(appointmentFrom);
+
+        log.info("Se modifică/salvează direct entitatea Appointment ID: {}", appointment.getId());
+        Appointment updatedAppointment =
+                appointmentRepository.save(appointment);
+
+        log.info("Programarea ID {} a fost modificată cu succes.", appointmentId);
+
+        return appointmentMapper.toDto(updatedAppointment);
+    }
+
+    @Transactional
+    public void submitFeedback(Integer appointmentId, float rating, String username) {
+
+        log.debug("Se procesează trimiterea de feedback pentru programarea ID: {} de către utilizatorul {}",
+                appointmentId, username);
 
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> {
@@ -119,31 +236,47 @@ public class AppointmentService {
                     return new ResourceNotFoundException("Programarea nu a fost găsită.");
                 });
 
-        if (!appointment.getPatient().getId().equals(currentPatientId)) {
-            log.error("Securitate: Pacientul ID {} a încercat ilegal să lase feedback pentru programarea ID {} a pacientului ID {}",
-                    currentPatientId, appointmentId, appointment.getPatient().getId());
-            throw new UnauthorizedAccessException("Nu puteți lăsa feedback pentru o programare care nu vă aparține.");
+        Patient currentPatient = patientRepository.findByUserUsername(username)
+                .orElseThrow(() -> {
+                    log.error("Pacientul asociat utilizatorului {} nu a fost găsit.", username);
+                    return new ResourceNotFoundException("Pacientul nu a fost găsit.");
+                });
+
+        if (!appointment.getPatient().getId().equals(currentPatient.getId())) {
+            log.error("Securitate: Pacientul ID {} a încercat să lase feedback pentru programarea ID {} care aparține pacientului ID {}",
+                    currentPatient.getId(), appointmentId, appointment.getPatient().getId());
+
+            throw new UnauthorizedAccessException(
+                    "Nu puteți lăsa feedback pentru o programare care nu vă aparține.");
         }
 
         if (OffsetDateTime.now().isBefore(appointment.getAppointmentFrom().plusMinutes(30))) {
-            log.error("Validare eșuată: Încercare timpurie de feedback la programarea ID {} înainte de expirarea celor 30 min.", appointmentId);
-            throw new InvalidActionException("Feedback-ul poate fi trimis doar după 30 de minute de la începerea consultației.");
+            log.error("Feedback prea devreme pentru programarea ID {}", appointmentId);
+
+            throw new InvalidActionException(
+                    "Feedback-ul poate fi trimis doar după 30 de minute de la începerea consultației.");
         }
 
         MedicalService service = appointment.getMedicalService();
-        double newRating = (service.getRating() * service.getNrOfRatings() + rating) / (service.getNrOfRatings() + 1);
+
+        double newRating =
+                (service.getRating() * service.getNrOfRatings() + rating)
+                        / (service.getNrOfRatings() + 1);
+
         service.setRating(newRating);
         service.setNrOfRatings(service.getNrOfRatings() + 1);
-        medicalServiceService.save(service);
 
-        log.debug("Rating-ul serviciului ID {} a fost actualizat la {}", service.getId(), newRating);
+        medicalServiceService.save(service);
 
         appointment.setStatus("Completed");
         appointmentRepository.save(appointment);
 
-        log.info("Feedback salvat cu succes (rating: {}) pentru programarea ID {}. Status completat.", rating, appointmentId);
+        log.info("Feedback salvat cu succes pentru programarea ID {}", appointmentId);
     }
-    public List<OffsetDateTime> getAvailableTimeSlots(MedicalService medicalService, Integer doctorId, String date) {
+
+    public List<OffsetDateTime> getAvailableTimeSlots(Integer medicalServiceId, Integer doctorId, String date) {
+        MedicalService medicalService =
+                medicalServiceService.getMedicalServiceById(medicalServiceId);
         log.debug("Calculare sloturi pentru serviciul ID: {}, Medic ID: {}, Data: {}", medicalService.getId(), doctorId, date);
 
         LocalDate selectedDate = LocalDate.parse(date);
@@ -199,33 +332,87 @@ public class AppointmentService {
         return availableSlots;
     }
 
-    public Optional<Appointment> findById(Integer appointmentId) {
+    public Optional<AppointmentResponseDTO> findById(Integer appointmentId) {
         log.debug("Căutare programare cu ID: {}", appointmentId);
-        return appointmentRepository.findById(appointmentId);
+        return appointmentRepository.findById(appointmentId).map(appointmentMapper::toDto);
     }
 
-    public Page<Appointment> getAppointmentsByPatientIdPaged(Integer patientId, Pageable pageable) {
+    public Page<AppointmentResponseDTO> getAppointmentsByPatientIdPaged(Integer patientId, Pageable pageable) {
         log.debug("Preluare paginată a programărilor pentru pacientul ID: {}", patientId);
-        return appointmentRepository.findByPatientId(patientId, pageable);
+        return appointmentRepository.findByPatientId(patientId, pageable).map(appointmentMapper::toDto);
     }
 
-    public Page<Appointment> getAppointmentsByDoctorIdPaged(Integer doctorId, Pageable pageable) {
+    public Page<AppointmentResponseDTO> getAppointmentsByDoctorIdPaged(Integer doctorId, Pageable pageable) {
         log.debug("Preluare paginată a programărilor pentru doctorul cu ID: {}", doctorId);
-        return appointmentRepository.findByDoctorId(doctorId, pageable);
+        return appointmentRepository.findByDoctorId(doctorId, pageable).map(appointmentMapper::toDto);
     }
 
-    public Appointment save(Appointment appointment) {
-        log.info("Se modifică/salvează direct entitatea Appointment ID: {}", appointment.getId());
-        return appointmentRepository.save(appointment);
+    @Transactional
+    public void deleteAppointment(Integer appointmentId,
+                                  Authentication authentication) {
+
+        log.info("Se încearcă ștergerea programării ID {}", appointmentId);
+
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> {
+                    log.error("Programarea cu ID-ul {} nu există.", appointmentId);
+                    return new ResourceNotFoundException(
+                            "Programarea cu ID-ul " + appointmentId + " nu a fost găsită.");
+                });
+
+        validateAppointmentOwnership(appointment, authentication);
+
+        appointmentRepository.delete(appointment);
+
+        log.info("Programarea cu ID-ul {} a fost ștearsă.", appointmentId);
     }
 
-    public boolean deleteAppointment(Integer id) {
-        if (appointmentRepository.existsById(id)) {
-            appointmentRepository.deleteById(id);
-            log.info("Programarea cu ID-ul {} a fost ștearsă din sistem.", id);
-            return true;
+    private void validateAppointmentOwnership(
+            Appointment appointment,
+            Authentication authentication) {
+
+        String username = authentication.getName();
+
+        boolean isPatient = authentication.getAuthorities()
+                .stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_PATIENT"));
+
+        boolean isDoctor = authentication.getAuthorities()
+                .stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"));
+
+        if (isPatient) {
+
+            Patient currentPatient =
+                    patientRepository.findByUserUsername(username)
+                            .orElseThrow(() ->
+                                    new ResourceNotFoundException("Pacientul nu a fost găsit."));
+
+            if (!currentPatient.getId().equals(appointment.getPatient().getId())) {
+                throw new UnauthorizedAccessException(
+                        "Nu puteți modifica programarea altui pacient.");
+            }
+
+            return;
         }
-        log.error("Ștergere eșuată: Programarea cu ID-ul {} nu a putut fi găsită pentru eliminare.", id);
-        return false;
+
+        if (isDoctor) {
+
+            Doctor currentDoctor =
+                    doctorRepository.findByUserUsername(username)
+                            .orElseThrow(() ->
+                                    new ResourceNotFoundException("Doctorul nu a fost găsit."));
+
+            boolean ownsAppointment =
+                    appointment.getMedicalService()
+                            .getMedicalServiceDoctors()
+                            .stream()
+                            .anyMatch(d -> d.getId().equals(currentDoctor.getId()));
+
+            if (!ownsAppointment) {
+                throw new UnauthorizedAccessException(
+                        "Nu puteți modifica programarea altui doctor.");
+            }
+        }
     }
 }

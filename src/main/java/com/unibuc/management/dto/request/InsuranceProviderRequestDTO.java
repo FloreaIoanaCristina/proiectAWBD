@@ -1,4 +1,4 @@
-package com.unibuc.management.dto.validation;
+package com.unibuc.management.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;

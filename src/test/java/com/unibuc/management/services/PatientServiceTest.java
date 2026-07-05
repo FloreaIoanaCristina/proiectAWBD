@@ -1,17 +1,23 @@
 package com.unibuc.management.services;
 
-import com.unibuc.management.dto.validation.PatientRequestDTO;
-import com.unibuc.management.entities.Patient;
+import com.unibuc.management.domain.InsuranceProvider;
+import com.unibuc.management.domain.User;
+import com.unibuc.management.dto.request.PatientRequestDTO;
+import com.unibuc.management.domain.Patient;
+import com.unibuc.management.dto.response.PatientResponseDTO;
 import com.unibuc.management.exceptions.InvalidActionException;
 import com.unibuc.management.exceptions.ResourceNotFoundException;
+import com.unibuc.management.repositories.AppointmentRepository;
 import com.unibuc.management.repositories.PatientRepository;
 import com.unibuc.management.repositories.UserRepository;
 import com.unibuc.management.repositories.InsuranceProviderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -19,139 +25,198 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class PatientServiceTest {
 
-    @Mock
-    private PatientRepository patientRepository;
-    @Mock
-    private UserRepository userRepository;
-    @Mock
-    private InsuranceProviderRepository insuranceProviderRepository;
-
+    @InjectMocks
     private PatientService patientService;
 
+    @Mock private PatientRepository patientRepository;
+    @Mock private UserRepository userRepository;
+    @Mock private InsuranceProviderRepository insuranceProviderRepository;
+    @Mock private AppointmentRepository appointmentRepository;
+
     private Patient patient;
-    private PatientRequestDTO patientDTO;
+    private PatientRequestDTO dto;
+    private InsuranceProvider provider;
+    private User user;
 
     @BeforeEach
     void setUp() {
-        patientService = new PatientService(patientRepository, userRepository, insuranceProviderRepository);
-
-        LocalDate validBirthDate = LocalDate.now().minusYears(25);
 
         patient = new Patient();
         patient.setId(1);
-        patient.setName("John Doe");
-        patient.setAge(validBirthDate);
-        patient.setSex(true);
-        patient.setSubscription(false);
 
-        patientDTO = new PatientRequestDTO();
-        patientDTO.setName("John Doe");
-        patientDTO.setBirthDate(validBirthDate);
-        patientDTO.setSex(true);
-        patientDTO.setSubscription(false);
-        patientDTO.setInsuranceProviderId(null);
+        provider = new InsuranceProvider();
+        user = new User();
+        user.setId(1L);
+
+        dto = new PatientRequestDTO();
+        dto.setName("John");
+        dto.setBirthDate(LocalDate.of(1990, 1, 1));
+        dto.setSex(true);
+        dto.setSubscription(true);
     }
 
-    @Test
-    void testGetAllPatients() {
-        when(patientRepository.findAll()).thenReturn(List.of(patient));
+    private void mockAuth(String username, String role) {
+        var auth = mock(org.springframework.security.core.Authentication.class);
 
-        List<Patient> patients = patientService.getAllPatients();
+        when(auth.getName()).thenReturn(username);
+        when(auth.getAuthorities()).thenAnswer(inv -> List.of(
+                (org.springframework.security.core.GrantedAuthority)
+                        () -> role
+        ));
 
-        assertNotNull(patients);
-        assertFalse(patients.isEmpty());
-        assertEquals(1, patients.size());
-        assertEquals(patient.getId(), patients.get(0).getId());
-        verify(patientRepository, times(1)).findAll();
+        SecurityContextHolder.getContext().setAuthentication(auth);
     }
 
+    // ---------------- GET ----------------
+
     @Test
-    void testGetPatientById_Found() {
+    void getPatientById_shouldReturnPatient() {
+
         when(patientRepository.findById(1)).thenReturn(Optional.of(patient));
 
-        Patient foundPatient = patientService.getPatientById(1);
+        Patient result = patientService.getPatientById(1);
 
-        assertNotNull(foundPatient);
-        assertEquals(patient.getId(), foundPatient.getId());
-        verify(patientRepository, times(1)).findById(1);
+        assertEquals(1, result.getId());
     }
 
     @Test
-    void testGetPatientById_NotFound() {
+    void getPatientById_shouldThrow_whenNotFound() {
+
         when(patientRepository.findById(1)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> patientService.getPatientById(1));
-        verify(patientRepository, times(1)).findById(1);
+        assertThrows(ResourceNotFoundException.class,
+                () -> patientService.getPatientById(1));
     }
 
     @Test
-    void testCreatePatient_Success() {
-        when(patientRepository.save(any(Patient.class))).thenReturn(patient);
+    void getPatientByUsername_shouldReturnPatient() {
 
-        Patient createdPatient = patientService.createPatient(patientDTO);
+        when(patientRepository.findByUserUsername("user"))
+                .thenReturn(Optional.of(patient));
 
-        assertNotNull(createdPatient);
-        assertEquals(patient.getId(), createdPatient.getId());
-        assertEquals(patient.getName(), createdPatient.getName());
-        verify(patientRepository, times(1)).save(any(Patient.class));
+        Patient result = patientService.getPatientByUsername("user");
+
+        assertEquals(1, result.getId());
+    }
+
+    // ---------------- CREATE ----------------
+
+    @Test
+    void createPatient_shouldCreateSuccessfully() {
+
+        dto.setInsuranceProviderId(1);
+        dto.setUserId(1L);
+
+        when(insuranceProviderRepository.findById(1))
+                .thenReturn(Optional.of(provider));
+
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.of(user));
+
+        when(patientRepository.save(any()))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        PatientResponseDTO result = patientService.createPatient(dto);
+
+        assertEquals(provider, result.getInsuranceProvider());
+        assertEquals(user.getId(), result.getUserId());
     }
 
     @Test
-    void testCreatePatient_UnderageThrowsException() {
-        patientDTO.setBirthDate(LocalDate.now().minusYears(16));
+    void createPatient_shouldThrow_whenUnder18() {
 
-        assertThrows(InvalidActionException.class, () -> {
-            patientService.createPatient(patientDTO);
-        });
+        dto.setBirthDate(LocalDate.now().minusYears(10));
 
-        verify(patientRepository, never()).save(any(Patient.class));
+        assertThrows(InvalidActionException.class,
+                () -> patientService.createPatient(dto));
     }
 
     @Test
-    void testUpdatePatient_Found() {
+    void createPatient_shouldThrow_whenInsuranceNotFound() {
+
+        dto.setInsuranceProviderId(1);
+
+        when(insuranceProviderRepository.findById(1))
+                .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> patientService.createPatient(dto));
+    }
+
+    // ---------------- UPDATE ----------------
+
+    @Test
+    void updatePatient_shouldThrow_whenNotFound() {
+
+        when(patientRepository.findById(1)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> patientService.updatePatient(1, dto));
+    }
+
+    @Test
+    void updatePatient_shouldUpdateSuccessfully() {
+
+        Patient existing = new Patient();
+        existing.setId(1);
+
+        dto.setName("Updated");
+
+        when(patientRepository.findById(1)).thenReturn(Optional.of(existing));
+        when(patientRepository.save(any()))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        PatientResponseDTO result = patientService.updatePatient(1, dto);
+
+        assertEquals("Updated", result.getName());
+    }
+
+    @Test
+    void updatePatient_shouldClearInsurance_whenNull() {
+
+        Patient existing = new Patient();
+        existing.setId(1);
+        existing.setInsuranceProvider(provider);
+
+        dto.setInsuranceProviderId(null);
+
+        when(patientRepository.findById(1)).thenReturn(Optional.of(existing));
+        when(patientRepository.save(any()))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        PatientResponseDTO result = patientService.updatePatient(1, dto);
+
+        assertNull(result.getInsuranceProvider());
+    }
+
+    // ---------------- DELETE ----------------
+
+    @Test
+    void deletePatient_shouldThrow_whenHasAppointments() {
+
         when(patientRepository.findById(1)).thenReturn(Optional.of(patient));
-        when(patientRepository.save(any(Patient.class))).thenReturn(patient);
+        when(appointmentRepository.countByPatientId(1)).thenReturn(2L);
 
-        Patient updatedPatient = patientService.updatePatient(1, patientDTO);
-
-        assertNotNull(updatedPatient);
-        verify(patientRepository, times(1)).findById(1);
-        verify(patientRepository, times(1)).save(any(Patient.class));
-    }
-    @Test
-    void testUpdatePatient_NotFound() {
-        when(patientRepository.findById(1)).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class, () -> {
-            patientService.updatePatient(1, patientDTO);
-        });
-
-        verify(patientRepository, times(1)).findById(1);
-        verify(patientRepository, never()).save(any(Patient.class));
+        assertThrows(InvalidActionException.class,
+                () -> patientService.deletePatient(1));
     }
 
     @Test
-    void testDeletePatient_Success() {
+    void deletePatient_shouldDeleteSuccessfully_asPatientOwner() {
+
+        patient.setUser(user);
+
         when(patientRepository.findById(1)).thenReturn(Optional.of(patient));
-        doNothing().when(patientRepository).delete(patient);
+        when(appointmentRepository.countByPatientId(1)).thenReturn(0L);
 
-        assertDoesNotThrow(() -> patientService.deletePatient(1));
+        mockAuth("user", "ROLE_PATIENT");
 
-        verify(patientRepository, times(1)).findById(1);
-        verify(patientRepository, times(1)).delete(patient);
-    }
+        patientService.deletePatient(1);
 
-    @Test
-    void testDeletePatient_NotFound() {
-        when(patientRepository.findById(1)).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class, () -> patientService.deletePatient(1));
-
-        verify(patientRepository, times(1)).findById(1);
-        verify(patientRepository, never()).delete(any(Patient.class));
+        verify(patientRepository).delete(patient);
+        verify(userRepository).delete(user);
     }
 }

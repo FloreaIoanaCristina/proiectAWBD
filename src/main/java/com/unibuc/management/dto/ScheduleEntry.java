@@ -1,9 +1,15 @@
 package com.unibuc.management.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ScheduleEntry {
 
     private String title;
@@ -14,42 +20,4 @@ public class ScheduleEntry {
     private OffsetDateTime to;
     private Object entry;
 
-    public ScheduleEntry(String title, OffsetDateTime from, OffsetDateTime to, Object entry) {
-        this.title = title;
-        this.from = from;
-        this.to = to;
-        this.entry = entry;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public OffsetDateTime getFrom() {
-        return from;
-    }
-
-    public void setFrom(OffsetDateTime from) {
-        this.from = from;
-    }
-
-    public OffsetDateTime getTo() {
-        return to;
-    }
-
-    public void setTo(OffsetDateTime to) {
-        this.to = to;
-    }
-
-    public Object getEntry() {
-        return entry;
-    }
-
-    public void setEntry(Object entry) {
-        this.entry = entry;
-    }
 }

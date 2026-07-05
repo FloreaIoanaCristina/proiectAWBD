@@ -2,10 +2,7 @@ package com.unibuc.management.aspects;
 
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
-import org.aspectj.lang.annotation.AfterReturning;
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
-import org.aspectj.lang.annotation.Pointcut;
+import org.aspectj.lang.annotation.*;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -24,7 +21,7 @@ public class LoggingAspect {
         String className = joinPoint.getTarget().getClass().getSimpleName();
         Object[] args = joinPoint.getArgs();
 
-        log.info("AOP-LOG [START]: Se execută metoda {}.{}() cu argumentele: {}",
+        log.debug("AOP-LOG [START]: Se execută metoda {}.{}() cu argumentele: {}",
                 className, methodName, Arrays.toString(args));
     }
 
@@ -33,7 +30,18 @@ public class LoggingAspect {
         String methodName = joinPoint.getSignature().getName();
         String className = joinPoint.getTarget().getClass().getSimpleName();
 
-        log.info("AOP-LOG [SUCCESS]: Metoda {}.{}() s-a finalizat cu succes. Rezultat returnat: {}",
+        log.debug("AOP-LOG [SUCCESS]: Metoda {}.{}() s-a finalizat cu succes. Rezultat returnat: {}",
                 className, methodName, result);
+    }
+
+    @AfterThrowing(pointcut = "serviceMethods()", throwing = "ex")
+    public void logException(JoinPoint joinPoint, Exception ex) {
+
+        log.error(
+                "AOP-LOG [ERROR]: {}.{}() a aruncat excepția: {}",
+                joinPoint.getTarget().getClass().getSimpleName(),
+                joinPoint.getSignature().getName(),
+                ex.getMessage()
+        );
     }
 }

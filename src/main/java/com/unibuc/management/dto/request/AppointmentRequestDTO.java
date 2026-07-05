@@ -1,4 +1,4 @@
-package com.unibuc.management.dto.validation;
+package com.unibuc.management.dto.request;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;

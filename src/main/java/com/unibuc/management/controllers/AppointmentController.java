@@ -1,13 +1,12 @@
 package com.unibuc.management.controllers;
 
-import com.unibuc.management.dto.validation.AppointmentRequestDTO;
-import com.unibuc.management.entities.*;
-import com.unibuc.management.exceptions.InvalidActionException;
-import com.unibuc.management.exceptions.ResourceNotFoundException;
+import com.unibuc.management.dto.request.AppointmentRequestDTO;
+import com.unibuc.management.domain.*;
+import com.unibuc.management.dto.response.AppointmentResponseDTO;
 import com.unibuc.management.services.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,14 +19,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.temporal.ChronoUnit;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Optional;
 
 
 @RestController
 @RequestMapping("/api/appointments")
+@RequiredArgsConstructor
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
@@ -35,21 +33,9 @@ public class AppointmentController {
     private final MedicalServiceService medicalServiceService;
     private final DoctorService doctorService;
 
-    @Autowired
-    public AppointmentController(AppointmentService appointmentService,
-                                 PatientService patientService,
-                                 MedicalServiceService medicalServiceService,
-                                 DoctorService doctorService
-                                 ) {
-        this.appointmentService = appointmentService;
-        this.patientService = patientService;
-        this.medicalServiceService = medicalServiceService;
-        this.doctorService = doctorService;
-    }
-
     @PostMapping
     @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
-    public ResponseEntity<Appointment> create(@Valid @RequestBody AppointmentRequestDTO dto, Authentication authentication) {
+    public ResponseEntity<AppointmentResponseDTO> create(@Valid @RequestBody AppointmentRequestDTO dto, Authentication authentication) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(appointmentService.createAppointment(authentication, dto));
     }
@@ -60,200 +46,106 @@ public class AppointmentController {
             @RequestParam(required = false) Integer doctorId,
             @RequestParam String date) {
 
-        MedicalService medicalService = medicalServiceService.getMedicalServiceById(medicalServiceId);
-        List<OffsetDateTime> availableTimeSlots = appointmentService.getAvailableTimeSlots(medicalService, doctorId, date);
-        return ResponseEntity.ok(availableTimeSlots);
+        return ResponseEntity.ok(
+                appointmentService.getAvailableTimeSlots(
+                        medicalServiceId,
+                        doctorId,
+                        date)
+        );
     }
 
     @GetMapping("/patient/{patientId}")
-    @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
-    public ResponseEntity<Page<Appointment>> getAppointmentsByPatientId(
+    @PreAuthorize("hasAnyRole('PATIENT','DOCTOR')")
+    public ResponseEntity<Page<AppointmentResponseDTO>> getAppointmentsByPatientId(
             @PathVariable Integer patientId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "appointmentFrom,asc") String[] sort) {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = authentication.getName();
-
-        if (hasRole("ROLE_PATIENT")) {
-            Patient currentPatient = patientService.getPatientByUsername(currentUsername);
-            if (!currentPatient.getId().equals(patientId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-        }
+            @RequestParam(defaultValue = "appointmentFrom,asc") String[] sort,
+            Authentication authentication) {
 
         String sortBy = sort[0];
         Sort.Direction direction = (sort.length > 1 && sort[1].equalsIgnoreCase("desc"))
-                ? Sort.Direction.DESC : Sort.Direction.ASC;
+                ? Sort.Direction.DESC
+                : Sort.Direction.ASC;
+
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
-        Page<Appointment> appointmentsPage = appointmentService.getAppointmentsByPatientIdPaged(patientId, pageable);
-
-        if (hasRole("ROLE_DOCTOR")) {
-            Doctor currentDoctor = doctorService.getDoctorByUsername(currentUsername);
-            Integer doctorId = currentDoctor.getId();
-
-            List<Appointment> filtered = appointmentsPage.getContent().stream()
-                    .filter(a -> a.getMedicalService().getMedicalServiceDoctors().stream()
-                            .anyMatch(d -> d.getId().equals(doctorId)))
-                    .toList();
-
-            return ResponseEntity.ok(new org.springframework.data.domain.PageImpl<>(
-                    filtered, pageable, appointmentsPage.getTotalElements()));
-        }
-        return ResponseEntity.ok(appointmentsPage);
+        return ResponseEntity.ok(
+                appointmentService.getAppointmentsByPatientId(
+                        patientId,
+                        pageable,
+                        authentication)
+        );
     }
 
     @GetMapping("/doctor/{doctorId}")
     @PreAuthorize("hasRole('DOCTOR')")
-    public ResponseEntity<Page<Appointment>> getAppointmentsByDoctorId(
+    public ResponseEntity<Page<AppointmentResponseDTO>> getAppointmentsByDoctorId(
             @PathVariable Integer doctorId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "appointmentFrom,asc") String[] sort) {
-
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        Doctor currentDoctor = doctorService.getDoctorByUsername(currentUsername);
-
-        if (!currentDoctor.getId().equals(doctorId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+            @RequestParam(defaultValue = "appointmentFrom,asc") String[] sort,
+            Authentication authentication) {
 
         String sortBy = sort[0];
         Sort.Direction direction = (sort.length > 1 && sort[1].equalsIgnoreCase("desc"))
-                ? Sort.Direction.DESC : Sort.Direction.ASC;
+                ? Sort.Direction.DESC
+                : Sort.Direction.ASC;
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
-        Page<Appointment> pagedAppointments = appointmentService.getAppointmentsByDoctorIdPaged(doctorId, pageable);
-        return ResponseEntity.ok(pagedAppointments);
+        return ResponseEntity.ok(
+                appointmentService.getAppointmentsByDoctorId(
+                        doctorId,
+                        pageable,
+                        authentication)
+        );
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
-    public ResponseEntity<Appointment> updateAppointment(@PathVariable Integer id,
-                                                         @RequestParam @NotNull(message = "Noua dată este obligatorie.") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime appointmentFrom) {
+    public ResponseEntity<AppointmentResponseDTO> updateAppointment(
+            @PathVariable Integer id,
+            @RequestParam
+            @NotNull(message = "Noua dată este obligatorie.")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            OffsetDateTime appointmentFrom,
+            Authentication authentication) {
 
-        if (appointmentFrom.isBefore(OffsetDateTime.now())) {
-            throw new InvalidActionException("Nu puteți muta o programare în trecut.");
-        }
-
-        Appointment appointment = appointmentService.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Programarea cu ID-ul " + id + " nu a fost găsită."));
-
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        boolean isOwner = false;
-
-        if (hasRole("ROLE_PATIENT")) {
-            Patient currentPatient = patientService.getPatientByUsername(currentUsername);
-            isOwner = currentPatient.getId().equals(appointment.getPatient().getId());
-        }
-        else if (hasRole("ROLE_DOCTOR")) {
-            Doctor currentDoctor = doctorService.getDoctorByUsername(currentUsername);
-            Integer doctorId = currentDoctor.getId();
-
-            isOwner = appointment.getMedicalService().getMedicalServiceDoctors().stream()
-                    .anyMatch(d -> d.getId().equals(doctorId));
-        }
-
-        if (!isOwner) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        MedicalService medicalService = appointment.getMedicalService();
-        Integer currentDoctorId = (appointment.getDoctor() != null) ? appointment.getDoctor().getId() : null;
-
-        List<OffsetDateTime> availableSlots = appointmentService.getAvailableTimeSlots(
-                medicalService,
-                currentDoctorId,
-                appointmentFrom.toLocalDate().toString()
-        );
-
-        boolean slotAvailable = availableSlots.stream().anyMatch(slot ->
-                slot.truncatedTo(ChronoUnit.MINUTES)
-                        .equals(appointmentFrom.truncatedTo(ChronoUnit.MINUTES))
-        );
-
-        if (!slotAvailable) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-
-        appointment.setAppointmentFrom(appointmentFrom);
-        Appointment updatedAppointment = appointmentService.save(appointment);
+        AppointmentResponseDTO updatedAppointment =
+                appointmentService.updateAppointment(
+                        id,
+                        appointmentFrom,
+                        authentication);
 
         return ResponseEntity.ok(updatedAppointment);
     }
+
     @PostMapping("/{appointmentId}/feedback")
     @PreAuthorize("hasRole('PATIENT')")
-    public ResponseEntity<String> submitFeedback(@PathVariable Integer appointmentId,
-                                                 @RequestParam float rating) {
-        Optional<Appointment> appointmentOpt = appointmentService.findById(appointmentId);
+    public ResponseEntity<String> submitFeedback(
+            @PathVariable Integer appointmentId,
+            @RequestParam float rating,
+            Authentication authentication) {
 
-        if (appointmentOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Appointment not found or already completed.");
-        }
-
-        Appointment appointment = appointmentOpt.get();
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = authentication.getName();
-        Patient currentPatient = patientService.getPatientByUsername(currentUsername);
-
-        if (!currentPatient.getId().equals(appointment.getPatient().getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("You can only submit feedback for your own appointments.");
-        }
-
-        OffsetDateTime currentTime = OffsetDateTime.now();
-        if (currentTime.isBefore(appointment.getAppointmentFrom().plusMinutes(30))) {
-            return ResponseEntity.badRequest().body("Feedback can only be submitted after 30 minutes from the appointment start time.");
-        }
-
-        MedicalService service = appointment.getMedicalService();
-        double newRating = (service.getRating() * service.getNrOfRatings() + rating) / (service.getNrOfRatings() + 1);
-        service.setRating(newRating);
-        service.setNrOfRatings(service.getNrOfRatings() + 1);
-        medicalServiceService.save(service);
-
-        appointment.setStatus("Completed");
-        appointmentService.save(appointment);
+        appointmentService.submitFeedback(
+                appointmentId,
+                rating,
+                authentication.getName()
+        );
 
         return ResponseEntity.ok("Feedback submitted successfully.");
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
-    public ResponseEntity<Void> deleteAppointment(@PathVariable Integer id) {
-        Appointment appointment = appointmentService.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Programarea cu ID-ul " + id + " nu a fost găsită."));
+    public ResponseEntity<Void> deleteAppointment(
+            @PathVariable Integer id,
+            Authentication authentication) {
 
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        boolean isOwner = false;
+        appointmentService.deleteAppointment(id, authentication);
 
-        if (hasRole("ROLE_PATIENT")) {
-            Patient currentPatient = patientService.getPatientByUsername(currentUsername);
-            if (currentPatient.getId().equals(appointment.getPatient().getId())) {
-                isOwner = true;
-            }
-        } else if (hasRole("ROLE_DOCTOR")) {
-            Doctor currentDoctor = doctorService.getDoctorByUsername(currentUsername);
-            Integer doctorId = currentDoctor.getId();
-
-            isOwner = appointment.getMedicalService().getMedicalServiceDoctors().stream()
-                    .anyMatch(d -> d.getId().equals(doctorId));
-        }
-
-        if (!isOwner) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        appointmentService.deleteAppointment(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private Patient getAuthenticatedPatient() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return patientService.getPatientByUsername(username);
     }
 
     private boolean hasRole(String roleName) {

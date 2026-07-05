@@ -1,135 +1,171 @@
 package com.unibuc.management.controllers;
 
-import com.unibuc.management.entities.Doctor;
-import com.unibuc.management.exceptions.ResourceNotFoundException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.unibuc.management.dto.request.DoctorRequestDTO;
+import com.unibuc.management.domain.Doctor;
+import com.unibuc.management.mappers.DoctorMapper;
 import com.unibuc.management.services.DoctorService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import java.util.Collections;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
-public class DoctorControllerTest {
+@WebMvcTest(DoctorController.class)
+@AutoConfigureMockMvc
+@ActiveProfiles("h2")
+class DoctorControllerTest {
 
-    @Mock
-    private DoctorService doctorService;
+    @Autowired
+    MockMvc mockMvc;
 
-    @InjectMocks
-    private DoctorController doctorController;
+    @Autowired
+    ObjectMapper objectMapper;
 
-    private MockMvc mockMvc;
+    @MockitoBean
+    DoctorService doctorService;
 
-    @BeforeEach
-    public void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(doctorController).build();
+    @Test
+    void getAllDoctors() throws Exception {
+
+        Doctor doctor = new Doctor();
+        doctor.setId(1);
+        doctor.setName("Dr. House");
+
+        when(doctorService.getAllDoctors())
+                .thenReturn(List.of(doctor).stream().map(DoctorMapper::toResponseDTO).toList());
+
+        mockMvc.perform(get("/api/doctors"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].name").value("Dr. House"));
+
+        verify(doctorService).getAllDoctors();
     }
 
     @Test
-    public void createDoctor_ReturnsCreatedStatus() throws Exception {
+    void getDoctorById() throws Exception {
+
         Doctor doctor = new Doctor();
         doctor.setId(1);
-        doctor.setOffice("Cardiology");
+        doctor.setName("Dr. House");
 
-        when(doctorService.saveDoctor(any())).thenReturn(doctor);
-
-        mockMvc.perform(post("/api/doctors")
-                        .contentType("application/json")
-                        .content("{\"office\": \"Cardiology\"}"))
-                .andExpect(status().isCreated())
-                .andDo(result -> {
-                    String content = result.getResponse().getContentAsString();
-                    if (!content.isEmpty()) {
-                        org.junit.jupiter.api.Assertions.assertTrue(content.contains("Cardiology"));
-                    }
-                });
-    }
-
-    @Test
-    public void getDoctorById_ReturnsDoctor_WhenFound() throws Exception {
-        Doctor doctor = new Doctor();
-        doctor.setId(1);
-        doctor.setOffice("Cardiology");
-
-        when(doctorService.getDoctorById(1)).thenReturn(doctor);
+        when(doctorService.getDoctorById(1))
+                .thenReturn(doctor);
 
         mockMvc.perform(get("/api/doctors/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.office").value("Cardiology"));
+                .andExpect(jsonPath("$.name").value("Dr. House"));
+
+        verify(doctorService).getDoctorById(1);
     }
 
     @Test
-    public void getDoctorById_ReturnsNotFound_WhenDoctorNotFound() throws Exception {
-        when(doctorService.getDoctorById(1)).thenThrow(new ResourceNotFoundException("Not found"));
+    void getDoctorsPaged() throws Exception {
 
-        jakarta.servlet.ServletException exception = org.junit.jupiter.api.Assertions.assertThrows(
-                jakarta.servlet.ServletException.class,
-                () -> mockMvc.perform(get("/api/doctors/1"))
-        );
-        org.junit.jupiter.api.Assertions.assertTrue(exception.getCause() instanceof ResourceNotFoundException);
+        when(doctorService.getDoctorsPaged(any()))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        mockMvc.perform(get("/api/doctors/paged"))
+                .andExpect(status().isOk());
+
+        verify(doctorService).getDoctorsPaged(any());
     }
 
     @Test
-    public void updateDoctor_ReturnsUpdatedDoctor_WhenDoctorExists() throws Exception {
-        Doctor updatedDoctor = new Doctor();
-        updatedDoctor.setId(1);
-        updatedDoctor.setOffice("Neurology");
+    void createDoctor() throws Exception {
 
-        when(doctorService.updateDoctor(eq(1), any())).thenReturn(updatedDoctor);
+        DoctorRequestDTO dto = new DoctorRequestDTO();
+        dto.setName("Dr. House");
+        dto.setOffice("Cabinet 1");
+        dto.setMedicalServiceId(1);
+        dto.setNumberOfPtodays(30);
+
+        Doctor doctor = new Doctor();
+        doctor.setId(1);
+        doctor.setName("Dr. House");
+
+        when(doctorService.createDoctor(any(DoctorRequestDTO.class)))
+                .thenReturn(DoctorMapper.toResponseDTO(doctor));
+
+        mockMvc.perform(post("/api/doctors")
+                        .with(SecurityMockMvcRequestPostProcessors.user("doctor").roles("DOCTOR"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1));
+
+        verify(doctorService).createDoctor(any(DoctorRequestDTO.class));
+    }
+
+    @Test
+    void updateDoctor() throws Exception {
+
+        DoctorRequestDTO dto = new DoctorRequestDTO();
+        dto.setName("Updated Doctor");
+        dto.setOffice("Cabinet 2");
+        dto.setMedicalServiceId(1);
+        dto.setNumberOfPtodays(25);
+
+        Doctor doctor = new Doctor();
+        doctor.setId(1);
+        doctor.setName("Updated Doctor");
+
+        when(doctorService.updateDoctor(eq(1), any(DoctorRequestDTO.class)))
+                .thenReturn(DoctorMapper.toResponseDTO(doctor));
 
         mockMvc.perform(put("/api/doctors/1")
-                        .contentType("application/json")
-                        .content("{\"office\": \"Neurology\"}"))
+                        .with(SecurityMockMvcRequestPostProcessors.user("doctor").roles("DOCTOR"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
-                .andDo(result -> {
-                    String content = result.getResponse().getContentAsString();
-                    if (!content.isEmpty()) {
-                        org.junit.jupiter.api.Assertions.assertTrue(content.contains("Neurology"));
-                    }
-                });
+                .andExpect(jsonPath("$.name").value("Updated Doctor"));
+
+        verify(doctorService).updateDoctor(eq(1), any(DoctorRequestDTO.class));
     }
 
     @Test
-    public void updateDoctor_ReturnsNotFound_WhenDoctorNotFound() throws Exception {
-        when(doctorService.updateDoctor(eq(1), any())).thenThrow(new ResourceNotFoundException("Not found"));
+    void deleteDoctor() throws Exception {
 
-        jakarta.servlet.ServletException exception = org.junit.jupiter.api.Assertions.assertThrows(
-                jakarta.servlet.ServletException.class,
-                () -> mockMvc.perform(put("/api/doctors/1")
-                        .contentType("application/json")
-                        .content("{\"office\": \"Neurology\"}"))
-        );
-        org.junit.jupiter.api.Assertions.assertTrue(exception.getCause() instanceof ResourceNotFoundException);
-    }
+        doNothing().when(doctorService).deleteDoctor(1);
 
-    @Test
-    public void deleteDoctor_ReturnsNoContent_WhenDeleted() throws Exception {
-        Mockito.doNothing().when(doctorService).deleteDoctor(1);
-
-        mockMvc.perform(delete("/api/doctors/1"))
+        mockMvc.perform(delete("/api/doctors/1")
+                        .with(SecurityMockMvcRequestPostProcessors.user("doctor").roles("DOCTOR")))
                 .andExpect(status().isNoContent());
+
+        verify(doctorService).deleteDoctor(1);
     }
 
     @Test
-    public void deleteDoctor_ReturnsNotFound_WhenDoctorNotFound() throws Exception {
-        Mockito.doThrow(new ResourceNotFoundException("Doctorul nu a fost găsit"))
-                .when(doctorService).deleteDoctor(1);
+    void createDoctor_InvalidRequest_ShouldReturnBadRequest() throws Exception {
 
-        jakarta.servlet.ServletException exception = org.junit.jupiter.api.Assertions.assertThrows(
-                jakarta.servlet.ServletException.class,
-                () -> mockMvc.perform(delete("/api/doctors/1"))
-        );
-        org.junit.jupiter.api.Assertions.assertTrue(exception.getCause() instanceof ResourceNotFoundException);
+        DoctorRequestDTO dto = new DoctorRequestDTO();
+
+        mockMvc.perform(post("/api/doctors")
+                        .with(SecurityMockMvcRequestPostProcessors.user("doctor").roles("DOCTOR"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
     }
 }
