@@ -114,17 +114,18 @@ public class DoctorService {
             throw new InvalidActionException("Nu se poate șterge medicul deoarece are " + appointmentCount + " programări înregistrate în sistem.");
         }
 
-        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-        var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-        boolean isDoctor = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"));
-
-        if (isDoctor && user != null &&
-                !user.getUsername().equals(currentUsername)) {
-            throw new InvalidActionException(
-                    "Nu aveți permisiunea să ștergeți profilul unui alt medic care are cont activ.");
-        }
-
         if (user != null) {
+            String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+            var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+
+            boolean isDoctor = authorities.stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"));
+
+            if (isDoctor && !user.getUsername().equals(currentUsername)) {
+                throw new InvalidActionException(
+                        "Nu aveți permisiunea să ștergeți profilul unui alt medic care are cont activ.");
+            }
+
             log.info("Se șterge utilizatorul asociat '{}' (ID: {}) pentru a elimina doctorul în cascadă.",
                     user.getUsername(), user.getId());
             userRepository.delete(user);
@@ -132,7 +133,6 @@ public class DoctorService {
             log.warn("Doctorul cu ID-ul {} nu are un cont de User asociat. Se șterge doar entitatea Doctor.", id);
             doctorRepository.delete(doctor);
         }
-        log.info("Doctorul cu ID-ul {} a fost eliminat complet din sistem.", id);
     }
 
     public Doctor getDoctorByUsername(String username) {

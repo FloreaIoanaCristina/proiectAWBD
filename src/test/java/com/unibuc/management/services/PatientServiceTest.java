@@ -50,6 +50,7 @@ class PatientServiceTest {
         provider = new InsuranceProvider();
         user = new User();
         user.setId(1L);
+        user.setUsername("user");
 
         dto = new PatientRequestDTO();
         dto.setName("John");
@@ -121,7 +122,7 @@ class PatientServiceTest {
 
         PatientResponseDTO result = patientService.createPatient(dto);
 
-        assertEquals(provider, result.getInsuranceProvider());
+        assertEquals(provider.getId(), result.getInsuranceProvider().getId());
         assertEquals(user.getId(), result.getUserId());
     }
 

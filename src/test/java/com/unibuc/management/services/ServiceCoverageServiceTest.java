@@ -101,8 +101,8 @@ class ServiceCoverageServiceTest {
         ServiceCoverageResponseDTO result = serviceCoverageService.save(dto);
 
         assertEquals(80, result.getCoveragePercent());
-        assertEquals(provider, result.getInsuranceProvider());
-        assertEquals(medicalService, result.getMedicalService());
+        assertEquals(provider.getId(), result.getInsuranceProvider().getId());
+        assertEquals(medicalService.getId(), result.getMedicalService().getId());
     }
 
     @Test

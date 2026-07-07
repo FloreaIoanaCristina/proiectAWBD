@@ -1,5 +1,6 @@
 package com.unibuc.management.dto.response;
 
+import com.unibuc.management.dto.summary.AppointmentSummaryDTO;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -22,5 +23,5 @@ public class PaymentResponseDTO {
 
     private String status;
 
-    private Integer appointmentId;
+    private AppointmentSummaryDTO appointment;
 }

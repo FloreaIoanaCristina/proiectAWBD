@@ -8,9 +8,11 @@ import com.unibuc.management.mappers.MedicalServiceMapper;
 import com.unibuc.management.services.MedicalServiceService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -19,6 +21,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -26,6 +29,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(MedicalServiceController.class)
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
 class MedicalServiceControllerTest {
 
     @Autowired
@@ -98,6 +103,7 @@ class MedicalServiceControllerTest {
                 .thenReturn(MedicalServiceMapper.toResponseDTO(service));
 
         mockMvc.perform(post("/api/medical-services")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated());
@@ -124,6 +130,7 @@ class MedicalServiceControllerTest {
                 .thenReturn(MedicalServiceMapper.toResponseDTO(service));
 
         mockMvc.perform(put("/api/medical-services/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
@@ -136,7 +143,8 @@ class MedicalServiceControllerTest {
     @WithMockUser(roles = "DOCTOR")
     void deleteService_ShouldReturnNoContent() throws Exception {
 
-        mockMvc.perform(delete("/api/medical-services/1"))
+        mockMvc.perform(delete("/api/medical-services/1")
+                .with(csrf()))
                 .andExpect(status().isNoContent());
 
         verify(medicalServiceService).delete(1);
@@ -149,6 +157,7 @@ class MedicalServiceControllerTest {
         MedicalServiceRequestDTO dto = new MedicalServiceRequestDTO();
 
         mockMvc.perform(post("/api/medical-services")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());

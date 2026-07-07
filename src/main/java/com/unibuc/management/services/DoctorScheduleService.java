@@ -6,8 +6,10 @@ import com.unibuc.management.domain.Doctor;
 import com.unibuc.management.domain.PaidTimeOff;
 import com.unibuc.management.dto.request.PtoRequestDTO;
 import com.unibuc.management.dto.response.DoctorResponseDTO;
+import com.unibuc.management.dto.response.PaidTimeOffResponseDTO;
 import com.unibuc.management.exceptions.InvalidActionException;
 import com.unibuc.management.exceptions.ResourceNotFoundException;
+import com.unibuc.management.mappers.PaidTimeOffMapper;
 import com.unibuc.management.repositories.AppointmentRepository;
 import com.unibuc.management.repositories.DoctorRepository;
 import com.unibuc.management.repositories.PaidTimeOffRepository;
@@ -101,7 +103,7 @@ public class DoctorScheduleService {
         return schedule;
     }
 
-    public List<ScheduleEntry> getDoctorLeaves(Integer doctorId) {
+    public List<PaidTimeOffResponseDTO> getDoctorLeaves(Integer doctorId) {
         log.debug("Se preia istoricul complet de concedii (PTO) pentru doctorul ID: {}", doctorId);
 
         OffsetDateTime startRange = OffsetDateTime.now().minusYears(2);
@@ -110,13 +112,8 @@ public class DoctorScheduleService {
         List<PaidTimeOff> ptoEntries = ptoRepository.findActivePtoForDoctorInDay(doctorId, startRange, endRange);
 
         return ptoEntries.stream()
-                .map(pto -> new ScheduleEntry(
-                        "Paid Time Off",
-                        pto.getPtoFrom(),
-                        pto.getPtoTo(),
-                        pto
-                ))
-                .collect(Collectors.toList());
+                .map(PaidTimeOffMapper::toResponseDTO)
+                .toList();
     }
 
     @Transactional

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 @UtilityClass
 public class PaymentMapper {
-
+    private AppointmentMapper appointmentMapper;
     public static PaymentResponseDTO toResponseDTO(Payment payment) {
 
         if (payment == null) {
@@ -21,11 +21,7 @@ public class PaymentMapper {
                 .paymentMethod(payment.getPaymentMethod())
                 .paymentDate(payment.getPaymentDate())
                 .status(payment.getStatus())
-                .appointmentId(
-                        payment.getAppointment() != null
-                                ? payment.getAppointment().getId()
-                                : null
-                )
+                .appointment(appointmentMapper.toSummary(payment.getAppointment()))
                 .build();
     }
 

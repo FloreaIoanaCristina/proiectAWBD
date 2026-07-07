@@ -2,6 +2,7 @@ package com.unibuc.management.controllers;
 
 import com.unibuc.management.dto.ScheduleEntry;
 import com.unibuc.management.dto.request.PtoRequestDTO;
+import com.unibuc.management.dto.response.PaidTimeOffResponseDTO;
 import com.unibuc.management.services.DoctorScheduleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +33,8 @@ public class DoctorScheduleController {
 
     @GetMapping("/pto/{doctorId}")
     @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
-    public ResponseEntity<List<ScheduleEntry>> getDoctorLeaves(@PathVariable Integer doctorId) {
-        List<ScheduleEntry> leaves = doctorScheduleService.getDoctorLeaves(doctorId);
+    public ResponseEntity<List<PaidTimeOffResponseDTO>> getDoctorLeaves(@PathVariable Integer doctorId) {
+        List<PaidTimeOffResponseDTO> leaves = doctorScheduleService.getDoctorLeaves(doctorId);
         return ResponseEntity.ok(leaves);
     }
 

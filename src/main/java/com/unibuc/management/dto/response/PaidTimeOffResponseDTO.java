@@ -13,9 +13,9 @@ public class PaidTimeOffResponseDTO {
 
     private Integer id;
 
-    private OffsetDateTime ptoFrom;
+    private OffsetDateTime from;
 
-    private OffsetDateTime ptoTo;
+    private OffsetDateTime to;
 
     private Integer doctorId;
 }

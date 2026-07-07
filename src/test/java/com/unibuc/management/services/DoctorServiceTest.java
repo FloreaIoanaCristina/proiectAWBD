@@ -7,6 +7,8 @@ import com.unibuc.management.domain.User;
 import com.unibuc.management.dto.response.DoctorResponseDTO;
 import com.unibuc.management.exceptions.InvalidActionException;
 import com.unibuc.management.exceptions.ResourceNotFoundException;
+import com.unibuc.management.mappers.AppointmentMapper;
+import com.unibuc.management.mappers.DoctorMapper;
 import com.unibuc.management.repositories.AppointmentRepository;
 import com.unibuc.management.repositories.DoctorRepository;
 import com.unibuc.management.repositories.MedicalServiceRepository;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -87,7 +90,7 @@ class DoctorServiceTest {
 
         assertEquals("Dr. House", result.getName());
         assertEquals(user.getId(), result.getUserId());
-        assertEquals(medicalService, result.getMedicalService());
+        assertEquals(medicalService.getId(), result.getMedicalService().getId());
     }
 
     @Test
@@ -173,7 +176,7 @@ class DoctorServiceTest {
         DoctorResponseDTO result = doctorService.updateDoctor(1, dto);
 
         assertEquals("Dr. House", result.getName());
-        assertEquals(medicalService, result.getMedicalService());
+        assertEquals(medicalService.getId(), result.getMedicalService().getId());
     }
 
     @Test

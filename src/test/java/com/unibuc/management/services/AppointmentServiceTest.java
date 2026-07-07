@@ -74,6 +74,7 @@ class AppointmentServiceTest {
         medicalService.setEndHour(18);
         medicalService.setRating(4.5);
         medicalService.setNrOfRatings(10);
+
     }
     @Test
     void findById_shouldReturnAppointment() {
@@ -642,7 +643,7 @@ class AppointmentServiceTest {
                         authentication);
 
         assertEquals(1, result.getTotalElements());
-        assertEquals(appointment, result.getContent().get(0));
+        assertEquals(1, result.getContent().get(0).getId());
 
         verify(appointmentRepository)
                 .findByPatientId(1, pageable);
@@ -719,7 +720,7 @@ class AppointmentServiceTest {
                         authentication);
 
         assertEquals(1, result.getTotalElements());
-        assertEquals(appointment, result.getContent().get(0));
+        assertEquals(1, result.getContent().get(0).getId());
 
         verify(appointmentRepository)
                 .findByDoctorId(5, pageable);
@@ -784,8 +785,8 @@ class AppointmentServiceTest {
 
         AppointmentResponseDTO result = appointmentService.createAppointment(authentication, dto);
 
-        assertEquals(patient, result.getPatient());
-        assertEquals(medicalService, result.getMedicalService());
+        assertEquals(patient.getId(), result.getPatient().getId());
+        assertEquals(medicalService.getId(), result.getMedicalService().getId());
     }
     @Test
     void createAppointment_shouldCreateAppointment_whenStaffProvidesPatientId() {
@@ -861,8 +862,6 @@ class AppointmentServiceTest {
 
         AppointmentRequestDTO dto = mock(AppointmentRequestDTO.class);
 
-        OffsetDateTime slot = OffsetDateTime.now(ZoneOffset.UTC).plusDays(1);
-
         doReturn(Collections.singleton(Role.PATIENT))
                 .when(authentication)
                 .getAuthorities();
@@ -871,13 +870,13 @@ class AppointmentServiceTest {
         when(authentication.getPrincipal()).thenReturn(userDetails);
         when(userDetails.getId()).thenReturn(1L);
 
-        when(patientRepository.findByUserId(1L)).thenReturn(Optional.of(patient));
+        when(patientRepository.findByUserId(1L))
+                .thenReturn(Optional.of(patient));
 
         when(dto.getMedicalServiceId()).thenReturn(1);
-        when(dto.getDoctorId()).thenReturn(null);
-        when(dto.getAppointmentFrom()).thenReturn(slot);
 
-        when(medicalServiceRepository.findById(1)).thenReturn(Optional.empty());
+        when(medicalServiceRepository.findById(1))
+                .thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class,
                 () -> appointmentService.createAppointment(authentication, dto));

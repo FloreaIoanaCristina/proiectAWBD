@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
-@Profile({"!test", "!h2"})
+@Profile("!test")
 public class DataInitializer implements CommandLineRunner {
 
     private final MedicalServiceRepository medicalServiceRepository;

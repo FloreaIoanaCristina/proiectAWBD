@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.unibuc.management.dto.request.AppointmentRequestDTO;
 import com.unibuc.management.domain.Appointment;
 import com.unibuc.management.dto.response.AppointmentResponseDTO;
-import com.unibuc.management.repositories.UserRepository;
+import com.unibuc.management.repositories.*;
 import com.unibuc.management.services.AppointmentService;
 import com.unibuc.management.services.DoctorService;
 import com.unibuc.management.services.MedicalServiceService;
@@ -18,6 +18,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import javax.sql.DataSource;
 import java.time.OffsetDateTime;
@@ -34,31 +35,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(AppointmentController.class)
 @AutoConfigureMockMvc
-@ActiveProfiles("h2")
+@ActiveProfiles("test")
 class AppointmentControllerTest {
 
     @Autowired
     MockMvc mockMvc;
-
     @Autowired
     ObjectMapper objectMapper;
-
     @MockitoBean
     AppointmentService appointmentService;
-
-    @MockitoBean
-    PatientService patientService;
-
-    @MockitoBean
-    MedicalServiceService medicalServiceService;
-
-    @MockitoBean
-    DoctorService doctorService;
-    @MockitoBean
-    UserRepository userRepository;
-
-    @MockitoBean
-    DataSource dataSource;
 
     @Test
     void createAppointment() throws Exception {
@@ -77,6 +62,7 @@ class AppointmentControllerTest {
 
         mockMvc.perform(post("/api/appointments")
                         .with(user("patient").roles("PATIENT"))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
@@ -92,6 +78,8 @@ class AppointmentControllerTest {
                 .thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/api/appointments/available-times")
+                        .with(user("patient").roles("PATIENT"))
+                        .with(csrf())
                         .param("medicalServiceId", "1")
                         .param("date", "2026-08-10"))
                 .andExpect(status().isOk());
@@ -122,6 +110,7 @@ class AppointmentControllerTest {
 
         mockMvc.perform(post("/api/appointments/10/feedback")
                         .with(user("patient").roles("PATIENT"))
+                        .with(csrf())
                         .param("rating", "5"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Feedback submitted successfully."));
@@ -137,7 +126,8 @@ class AppointmentControllerTest {
                 .deleteAppointment(eq(1), any(Authentication.class));
 
         mockMvc.perform(delete("/api/appointments/1")
-                        .with(user("patient").roles("PATIENT")))
+                    .with(user("patient").roles("PATIENT"))
+                    .with(csrf()))
                 .andExpect(status().isNoContent());
 
         verify(appointmentService)

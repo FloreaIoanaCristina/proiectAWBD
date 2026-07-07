@@ -53,9 +53,9 @@ export default function PaymentsPage() {
 
   const filteredPayments = useMemo(() => {
     return payments.filter(pay => {
-      const serviceName = pay.appointment?.medicalService?.name?.toLowerCase() || '';
+      const serviceName = pay.appointment?.medicalServiceName?.toLowerCase() || '';
       const txId = `#trz-${pay.id}`.toLowerCase();
-      const patientName = pay.appointment?.patient?.name?.toLowerCase() || '';
+      const patientName = pay.appointment?.patientName?.toLowerCase() || '';
       return serviceName.includes(searchTerm.toLowerCase()) || 
              txId.includes(searchTerm.toLowerCase()) ||
              patientName.includes(searchTerm.toLowerCase());
@@ -77,7 +77,7 @@ export default function PaymentsPage() {
     setIsEditMode(true);
     setSelectedId(pay.id);
     setTxAmount(pay.amount || '');
-    setTxAppointmentId(pay.appointment?.id || '');
+    setTxAppointmentId(pay.appointment.id || '');
     setTxStatus(pay.status || 'PENDING');
     setTxMethod(pay.paymentMethod || 'NESPECIFICAT');
     setError('');
@@ -122,7 +122,7 @@ const handleTxSubmit = async (e) => {
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-amber-200 animate-pulse">
+      <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-amber-200">
         În așteptare
       </span>
     );
@@ -201,7 +201,7 @@ return (
                     </td>
                     {!isPatient && (
                       <td className="py-4 px-6 font-medium text-gray-900">
-                        {pay.appointment?.patient?.name || 'Pacient Nespecificat'}
+                        {pay.appointment?.patientName || 'Pacient Nespecificat'}
                       </td>
                     )}
                     <td className="py-4 px-6 text-gray-600">
@@ -222,7 +222,7 @@ return (
                       </span>
                     </td>
                     <td className="py-4 px-6 font-medium text-gray-800">
-                      {pay.appointment?.medicalService?.name || 'Consultație Clinică'}
+                      {pay.appointment?.medicalServiceName || 'Consultație Clinică'}
                     </td>
                     <td className="py-4 px-6 text-right font-bold text-gray-900">
                       {pay.amount?.toFixed(2)} RON

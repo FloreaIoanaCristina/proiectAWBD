@@ -7,11 +7,13 @@ import com.unibuc.management.mappers.PatientMapper;
 import com.unibuc.management.services.PatientService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -21,6 +23,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -28,6 +31,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PatientController.class)
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
 class PatientControllerTest {
 
     @Autowired
@@ -46,7 +51,8 @@ class PatientControllerTest {
         when(patientService.getAllPatientsPaged(any()))
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 5), 0));
 
-        mockMvc.perform(get("/api/patients"))
+        mockMvc.perform(get("/api/patients")
+                .with(csrf()))
                 .andExpect(status().isOk());
 
         verify(patientService).getAllPatientsPaged(any());
@@ -59,7 +65,8 @@ class PatientControllerTest {
         when(patientService.getAllPatients())
                 .thenReturn(List.of());
 
-        mockMvc.perform(get("/api/patients/all"))
+        mockMvc.perform(get("/api/patients/all")
+                .with(csrf()))
                 .andExpect(status().isOk());
 
         verify(patientService).getAllPatients();
@@ -75,7 +82,8 @@ class PatientControllerTest {
         when(patientService.getPatientById(1))
                 .thenReturn(patient);
 
-        mockMvc.perform(get("/api/patients/1"))
+        mockMvc.perform(get("/api/patients/1")
+                .with(csrf()))
                 .andExpect(status().isOk());
 
         verify(patientService).getPatientById(1);
@@ -99,6 +107,7 @@ class PatientControllerTest {
                 .thenReturn(PatientMapper.toResponseDTO(patient));
 
         mockMvc.perform(post("/api/patients")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated());
@@ -124,6 +133,7 @@ class PatientControllerTest {
                 .thenReturn(PatientMapper.toResponseDTO(patient));
 
         mockMvc.perform(put("/api/patients/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
@@ -135,7 +145,8 @@ class PatientControllerTest {
     @WithMockUser
     void deletePatient_ShouldReturnNoContent() throws Exception {
 
-        mockMvc.perform(delete("/api/patients/1"))
+        mockMvc.perform(delete("/api/patients/1")
+                .with(csrf()))
                 .andExpect(status().isNoContent());
 
         verify(patientService).deletePatient(1);
@@ -149,7 +160,8 @@ class PatientControllerTest {
 
         mockMvc.perform(post("/api/patients")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(objectMapper.writeValueAsString(dto))
+                        .with(csrf()))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(patientService);

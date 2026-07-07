@@ -5,9 +5,11 @@ import com.unibuc.management.dto.request.PtoRequestDTO;
 import com.unibuc.management.services.DoctorScheduleService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -17,6 +19,8 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -24,6 +28,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(DoctorScheduleController.class)
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
 class DoctorScheduleControllerTest {
 
     @Autowired
@@ -75,7 +81,9 @@ class DoctorScheduleControllerTest {
 
         mockMvc.perform(post("/api/doctor-schedule/schedulePTO")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(objectMapper.writeValueAsString(dto))
+                        .with(user("doctor1").roles("DOCTOR"))
+                        .with(csrf()))
                 .andExpect(status().isOk());
 
         verify(doctorScheduleService)
@@ -93,7 +101,9 @@ class DoctorScheduleControllerTest {
 
         mockMvc.perform(put("/api/doctor-schedule/10")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(objectMapper.writeValueAsString(dto))
+                        .with(user("doctor1").roles("DOCTOR"))
+                        .with(csrf()))
                 .andExpect(status().isOk());
 
         verify(doctorScheduleService)
@@ -104,7 +114,9 @@ class DoctorScheduleControllerTest {
     @WithMockUser(roles = "DOCTOR", username = "doctor1")
     void deletePTO_ShouldReturnNoContent() throws Exception {
 
-        mockMvc.perform(delete("/api/doctor-schedule/10"))
+        mockMvc.perform(delete("/api/doctor-schedule/10")
+                        .with(user("doctor1").roles("DOCTOR"))
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
 
         verify(doctorScheduleService)
@@ -119,7 +131,9 @@ class DoctorScheduleControllerTest {
 
         mockMvc.perform(post("/api/doctor-schedule/schedulePTO")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(objectMapper.writeValueAsString(dto))
+                        .with(user("doctor1").roles("DOCTOR"))
+                        .with(csrf()))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(doctorScheduleService);

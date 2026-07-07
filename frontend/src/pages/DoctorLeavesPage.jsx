@@ -28,7 +28,7 @@ export default function DoctorLeavesPage() {
         const formattedEvents = (response.data || []).map(entry => {
 
             return {
-            id: entry.entry?.id, 
+            id: entry.id, 
             title: 'CONCEDIU (PTO)',
             start: entry.from,
             end: entry.to,

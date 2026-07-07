@@ -38,7 +38,6 @@ public class AppointmentService {
     private final PaymentService paymentService;
     private final MedicalServiceService medicalServiceService;
     private final MedicalServiceRepository medicalServiceRepository;
-    private final AppointmentMapper appointmentMapper;
 
     @Transactional
     public AppointmentResponseDTO createAppointment(Authentication authentication, AppointmentRequestDTO dto) {
@@ -95,7 +94,7 @@ public class AppointmentService {
         Appointment savedAppointment = appointmentRepository.save(appointment);
         log.info("Programarea cu ID-ul {} a fost salvată cu succes în sistem.", savedAppointment.getId());
 
-        return appointmentMapper.toDto(savedAppointment);
+        return AppointmentMapper.toDto(savedAppointment);
     }
 
     @Transactional(readOnly = true)
@@ -118,7 +117,7 @@ public class AppointmentService {
                 throw new UnauthorizedAccessException(
                         "Nu aveți dreptul să vizualizați aceste programări.");
             }
-            return appointmentRepository.findByPatientId(patientId, pageable).map(appointmentMapper::toDto);
+            return appointmentRepository.findByPatientId(patientId, pageable).map(AppointmentMapper::toDto);
         }
 
         if (authentication.getAuthorities().stream()
@@ -138,7 +137,7 @@ public class AppointmentService {
 
             return new PageImpl<>(
                     filtered.stream()
-                            .map(appointmentMapper::toDto)
+                            .map(AppointmentMapper::toDto)
                             .toList(),
                     pageable,
                     filtered.size()
@@ -167,7 +166,7 @@ public class AppointmentService {
                     "Nu aveți dreptul să vizualizați aceste programări.");
         }
 
-        return appointmentRepository.findByDoctorId(doctorId, pageable).map(appointmentMapper::toDto);
+        return appointmentRepository.findByDoctorId(doctorId, pageable).map(AppointmentMapper::toDto);
     }
 
     @Transactional
@@ -221,7 +220,7 @@ public class AppointmentService {
 
         log.info("Programarea ID {} a fost modificată cu succes.", appointmentId);
 
-        return appointmentMapper.toDto(updatedAppointment);
+        return AppointmentMapper.toDto(updatedAppointment);
     }
 
     @Transactional
@@ -334,17 +333,17 @@ public class AppointmentService {
 
     public Optional<AppointmentResponseDTO> findById(Integer appointmentId) {
         log.debug("Căutare programare cu ID: {}", appointmentId);
-        return appointmentRepository.findById(appointmentId).map(appointmentMapper::toDto);
+        return appointmentRepository.findById(appointmentId).map(AppointmentMapper::toDto);
     }
 
     public Page<AppointmentResponseDTO> getAppointmentsByPatientIdPaged(Integer patientId, Pageable pageable) {
         log.debug("Preluare paginată a programărilor pentru pacientul ID: {}", patientId);
-        return appointmentRepository.findByPatientId(patientId, pageable).map(appointmentMapper::toDto);
+        return appointmentRepository.findByPatientId(patientId, pageable).map(AppointmentMapper::toDto);
     }
 
     public Page<AppointmentResponseDTO> getAppointmentsByDoctorIdPaged(Integer doctorId, Pageable pageable) {
         log.debug("Preluare paginată a programărilor pentru doctorul cu ID: {}", doctorId);
-        return appointmentRepository.findByDoctorId(doctorId, pageable).map(appointmentMapper::toDto);
+        return appointmentRepository.findByDoctorId(doctorId, pageable).map(AppointmentMapper::toDto);
     }
 
     @Transactional

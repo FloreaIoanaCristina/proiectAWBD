@@ -24,6 +24,8 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -33,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(DoctorController.class)
 @AutoConfigureMockMvc
-@ActiveProfiles("h2")
+@ActiveProfiles("test")
 class DoctorControllerTest {
 
     @Autowired
@@ -55,7 +57,9 @@ class DoctorControllerTest {
         when(doctorService.getAllDoctors())
                 .thenReturn(List.of(doctor).stream().map(DoctorMapper::toResponseDTO).toList());
 
-        mockMvc.perform(get("/api/doctors"))
+        mockMvc.perform(get("/api/doctors")
+                    .with(user("patient").roles("PATIENT"))
+                    .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].name").value("Dr. House"));
@@ -73,7 +77,9 @@ class DoctorControllerTest {
         when(doctorService.getDoctorById(1))
                 .thenReturn(doctor);
 
-        mockMvc.perform(get("/api/doctors/1"))
+        mockMvc.perform(get("/api/doctors/1")
+                    .with(user("patient").roles("PATIENT"))
+                    .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("Dr. House"));
@@ -87,7 +93,9 @@ class DoctorControllerTest {
         when(doctorService.getDoctorsPaged(any()))
                 .thenReturn(new PageImpl<>(Collections.emptyList()));
 
-        mockMvc.perform(get("/api/doctors/paged"))
+        mockMvc.perform(get("/api/doctors/paged")
+                    .with(user("patient").roles("PATIENT"))
+                    .with(csrf()))
                 .andExpect(status().isOk());
 
         verify(doctorService).getDoctorsPaged(any());
@@ -112,7 +120,8 @@ class DoctorControllerTest {
         mockMvc.perform(post("/api/doctors")
                         .with(SecurityMockMvcRequestPostProcessors.user("doctor").roles("DOCTOR"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(objectMapper.writeValueAsString(dto))
+                        .with(csrf()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1));
 
@@ -138,7 +147,8 @@ class DoctorControllerTest {
         mockMvc.perform(put("/api/doctors/1")
                         .with(SecurityMockMvcRequestPostProcessors.user("doctor").roles("DOCTOR"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(objectMapper.writeValueAsString(dto))
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Updated Doctor"));
 
@@ -151,7 +161,8 @@ class DoctorControllerTest {
         doNothing().when(doctorService).deleteDoctor(1);
 
         mockMvc.perform(delete("/api/doctors/1")
-                        .with(SecurityMockMvcRequestPostProcessors.user("doctor").roles("DOCTOR")))
+                        .with(SecurityMockMvcRequestPostProcessors.user("doctor").roles("DOCTOR"))
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
 
         verify(doctorService).deleteDoctor(1);
@@ -165,7 +176,8 @@ class DoctorControllerTest {
         mockMvc.perform(post("/api/doctors")
                         .with(SecurityMockMvcRequestPostProcessors.user("doctor").roles("DOCTOR"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(objectMapper.writeValueAsString(dto))
+                        .with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 }

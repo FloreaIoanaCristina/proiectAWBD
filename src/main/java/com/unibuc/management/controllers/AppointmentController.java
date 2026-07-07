@@ -29,9 +29,6 @@ import java.util.List;
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
-    private final PatientService patientService;
-    private final MedicalServiceService medicalServiceService;
-    private final DoctorService doctorService;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('PATIENT', 'DOCTOR')")
@@ -146,10 +143,5 @@ public class AppointmentController {
         appointmentService.deleteAppointment(id, authentication);
 
         return ResponseEntity.noContent().build();
-    }
-
-    private boolean hasRole(String roleName) {
-        return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals(roleName));
     }
 }
