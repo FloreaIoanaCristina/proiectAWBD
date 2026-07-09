@@ -1,0 +1,33 @@
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+      - org.springframework.boot.autoconfigure.session.SessionAutoConfiguration
+  session:
+    store-type: none
+  cloud:
+    config:
+      enabled: false
+    discovery:
+      enabled: false
+  config:
+    import: ""
+  datasource:
+    url: "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1"
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  main:
+    banner-mode: "off"
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false

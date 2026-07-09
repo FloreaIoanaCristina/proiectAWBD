@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: "jdbc:sqlserver://localhost\\SQLEXPRESS01;databaseName=Medical_User;encrypt=false"
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:5432167890}
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+  jpa:
+    database-platform: org.hibernate.dialect.SQLServerDialect
+    hibernate:
+      ddl-auto: update
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: true

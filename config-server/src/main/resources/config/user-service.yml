@@ -1,0 +1,3 @@
+info:
+  service: user-service
+  managed-by: config-server

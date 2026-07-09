@@ -41,4 +41,98 @@ Diagrama ER
 Diagrama conceptuala 
 <img width="975" height="970" alt="image" src="https://github.com/user-attachments/assets/3e452899-61fa-4d6d-b37c-047688b51320" />
 
+---
+
+## Arhitectură microservicii
+
+Monolitul a fost împărțit în 3 microservicii independente, în spatele unui Config Server, unui Eureka discovery server și unui Spring Cloud Gateway.
+
+```
+Frontend (Vite :5173)
+        │  /api, /auth  (cookies de sesiune + CSRF)
+        ▼
+api-gateway :8080  ──(lb://)──►  user-service    :8081   ──►  DB Medical_User
+        │                       medical-service  :8082   ──►  DB Medical_Medical
+        │                       payment-service  :8083   ──►  DB Medical_Payment
+        │
+        ├── discovery-server :8761   (Eureka: toate serviciile se înregistrează)
+        ├── config-server    :8888   (config centralizat + refresh dinamic)
+        └── Redis :6379  (sesiune partajată + rate limiting)
+
+Prometheus :9090  ──scrape /actuator/prometheus──►  toate serviciile
+Grafana    :3000  ──►  Prometheus
+```
+
+### Împărțirea responsabilităților
+- **user-service** – autentificare (sesiune + BCrypt + remember-me + CSRF), utilizatori și roluri (`USER`/`PATIENT`, `DOCTOR`).
+- **medical-service** – entitățile clinice principale: `Doctor`, `Patient`, `MedicalService`, `Appointment`, `PaidTimeOff`, `InsuranceProvider`, `ServiceCoverage` (relații JPA de toate tipurile).
+- **payment-service** – generarea și gestionarea plăților.
+
+Legăturile JPA inter-serviciu au fost înlocuite cu coloane de ID (`Doctor/Patient.userId`, `Payment.appointmentId/patientId`), iar comunicarea reală se face prin **Feign**:
+- `user-service → medical-service`: creare/căutare/ștergere profil.
+- `medical-service → payment-service`: creare plată pentru o programare.
+- `payment-service → medical-service`: `pricing-info` + `summary` pentru o programare.
+- `medical-service → user-service`: ștergere cont intern.
+
+### Securitate hibridă (II.6)
+- **Browser → gateway**: sesiune HTTP partajată prin **Spring Session Redis** + CSRF.
+- **Serviciu → serviciu (Feign)**: **JWT** semnat HMAC, emis dintr-un `RequestInterceptor` pe baza `SecurityContext`-ului și validat de un `SecurityFilterChain` `@Order(1)` pe `/api/internal/**` (stateless).
+
+### Cerințe opționale acoperite
+- **II.1 Config centralizat** – `config-server` (profil `native`), servicii client cu `spring.config.import`, `@RefreshScope` demo pe `GET /auth/info` + `POST /actuator/refresh`.
+- **II.2 Service discovery + Feign** – Eureka + OpenFeign.
+- **II.3 Load balancing** – Spring Cloud LoadBalancer (`lb://`); rulează 2 instanțe de `medical-service` (vezi mai jos).
+- **II.4 API Gateway** – routing centralizat, `RequestRateLimiter` pe Redis + `GlobalFilter` de correlation-id/logging.
+- **II.5 Monitorizare** – Actuator (`health,info,metrics,prometheus`) + Prometheus + Grafana (`docker-compose.yml`).
+- **II.7 Resilience4j** – circuit breaker + retry + fallback pe apelurile Feign medical↔payment.
+
+## Rulare
+
+### 1. Infrastructură
+```bash
+# Redis + Prometheus + Grafana
+docker-compose up -d
+
+# Bazele de date pe SQL Server (localhost\SQLEXPRESS01)
+#   Medical_User, Medical_Medical, Medical_Payment
+```
+
+### 2. Ordinea de pornire
+```bash
+# 1) Config Server
+cd config-server   && mvn spring-boot:run
+# 2) Eureka
+cd discovery-server && mvn spring-boot:run
+# 3) Gateway
+cd api-gateway     && mvn spring-boot:run
+# 4) Servicii
+cd user-service    && mvn spring-boot:run
+cd medical-service && mvn spring-boot:run
+cd payment-service && mvn spring-boot:run
+# 5) Frontend
+cd frontend && npm install && npm run dev
+```
+
+### 3. Demo load balancing (a 2-a instanță de medical-service)
+```bash
+cd medical-service && mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8092
+```
+Ambele instanțe apar în Eureka (`http://localhost:8761`); apelurile Feign din payment-service se distribuie round-robin.
+
+## Testare
+Fiecare serviciu are teste unitare (Mockito) pe stratul de service + un test de context pe H2 (profil `test`, fără Redis/Eureka/Config):
+```bash
+cd user-service    && mvn test
+cd medical-service && mvn test
+cd payment-service && mvn test
+```
+
+## Verificare rapidă
+- Eureka: `http://localhost:8761`
+- Config servit: `http://localhost:8888/user-service/default`
+- Refresh dinamic: modifică `app.message` în config → `POST http://localhost:8081/actuator/refresh` → `GET http://localhost:8081/auth/info`
+- Prometheus: `http://localhost:9090` (ținte `UP`), Grafana: `http://localhost:3000` (admin/admin)
+- Rate limit: burst pe o rută a gateway-ului → `429 Too Many Requests`
+- Resilience: oprește `payment-service`, creează o programare → fallback (plată `UNAVAILABLE`) în loc de eroare
+- Flux end-to-end: register → login → create appointment → payment, prin gateway
 

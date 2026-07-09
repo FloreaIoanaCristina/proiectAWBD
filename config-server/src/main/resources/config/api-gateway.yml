@@ -1,0 +1,3 @@
+info:
+  service: api-gateway
+  managed-by: config-server

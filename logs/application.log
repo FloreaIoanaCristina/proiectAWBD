@@ -9826,3 +9826,307 @@ java.lang.NullPointerException: Cannot invoke "com.unibuc.management.mappers.App
 2026-07-07 13:48:27 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
 2026-07-07 13:48:27 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
 2026-07-07 13:48:27 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-07-07 13:48:37 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 8.0.2.Final
+2026-07-07 13:48:37 [main] INFO  c.u.management.ManagementApplication - Starting ManagementApplication using Java 17.0.6 with PID 29028 (D:\AWBDProject\target\classes started by Ioana in D:\AWBDProject)
+2026-07-07 13:48:37 [main] DEBUG c.u.management.ManagementApplication - Running with Spring Boot v3.4.1, Spring v6.2.1
+2026-07-07 13:48:37 [main] INFO  c.u.management.ManagementApplication - The following 1 profile is active: "dev"
+2026-07-07 13:48:39 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-07-07 13:48:40 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 165 ms. Found 9 JPA repository interfaces.
+2026-07-07 13:48:42 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-07-07 13:48:42 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-07-07 13:48:42 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-07-07 13:48:42 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.34]
+2026-07-07 13:48:42 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-07-07 13:48:42 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 4901 ms
+2026-07-07 13:48:43 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-07-07 13:48:43 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.6.4.Final
+2026-07-07 13:48:44 [main] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2026-07-07 13:48:45 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-07-07 13:48:45 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-07-07 13:48:45 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection ConnectionID:1 ClientConnectionId: 2ed63057-c4ba-48ad-9919-56a20a973d6b
+2026-07-07 13:48:45 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-07-07 13:48:45 [main] WARN  org.hibernate.orm.deprecation - HHH90000025: SQLServerDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-07-07 13:48:45 [main] INFO  o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 16.0
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-07-07 13:48:48 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-07-07 13:48:48 [main] WARN  o.h.t.s.i.ExceptionHandlerLoggedImpl - GenerationTarget encountered exception accepting command : Error executing DDL "create table SERVICE_INSURANCE_COVERAGE (ID bigint identity not null, COVERAGE_PERCENT int, ID_INSURANCE_PROVIDER int not null, ID_MEDICAL_SERVICE int not null, primary key (ID))" via JDBC [There is already an object named 'SERVICE_INSURANCE_COVERAGE' in the database.]
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "create table SERVICE_INSURANCE_COVERAGE (ID bigint identity not null, COVERAGE_PERCENT int, ID_INSURANCE_PROVIDER int not null, ID_MEDICAL_SERVICE int not null, primary key (ID))" via JDBC [There is already an object named 'SERVICE_INSURANCE_COVERAGE' in the database.]
+	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94)
+	at org.hibernate.tool.schema.internal.AbstractSchemaMigrator.applySqlString(AbstractSchemaMigrator.java:576)
+	at org.hibernate.tool.schema.internal.AbstractSchemaMigrator.applySqlStrings(AbstractSchemaMigrator.java:516)
+	at org.hibernate.tool.schema.internal.AbstractSchemaMigrator.createTable(AbstractSchemaMigrator.java:316)
+	at org.hibernate.tool.schema.internal.GroupedSchemaMigratorImpl.performTablesMigration(GroupedSchemaMigratorImpl.java:80)
+	at org.hibernate.tool.schema.internal.AbstractSchemaMigrator.performMigration(AbstractSchemaMigrator.java:233)
+	at org.hibernate.tool.schema.internal.AbstractSchemaMigrator.doMigration(AbstractSchemaMigrator.java:112)
+	at org.hibernate.tool.schema.spi.SchemaManagementToolCoordinator.performDatabaseAction(SchemaManagementToolCoordinator.java:280)
+	at org.hibernate.tool.schema.spi.SchemaManagementToolCoordinator.lambda$process$5(SchemaManagementToolCoordinator.java:144)
+	at java.base/java.util.HashMap.forEach(HashMap.java:1421)
+	at org.hibernate.tool.schema.spi.SchemaManagementToolCoordinator.process(SchemaManagementToolCoordinator.java:141)
+	at org.hibernate.boot.internal.SessionFactoryObserverForSchemaExport.sessionFactoryCreated(SessionFactoryObserverForSchemaExport.java:37)
+	at org.hibernate.internal.SessionFactoryObserverChain.sessionFactoryCreated(SessionFactoryObserverChain.java:35)
+	at org.hibernate.internal.SessionFactoryImpl.<init>(SessionFactoryImpl.java:324)
+	at org.hibernate.boot.internal.SessionFactoryBuilderImpl.build(SessionFactoryBuilderImpl.java:463)
+	at org.hibernate.jpa.boot.internal.EntityManagerFactoryBuilderImpl.build(EntityManagerFactoryBuilderImpl.java:1506)
+	at org.springframework.orm.jpa.vendor.SpringHibernateJpaPersistenceProvider.createContainerEntityManagerFactory(SpringHibernateJpaPersistenceProvider.java:66)
+	at org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean.createNativeEntityManagerFactory(LocalContainerEntityManagerFactoryBean.java:390)
+	at org.springframework.orm.jpa.AbstractEntityManagerFactoryBean.buildNativeEntityManagerFactory(AbstractEntityManagerFactoryBean.java:419)
+	at org.springframework.orm.jpa.AbstractEntityManagerFactoryBean.afterPropertiesSet(AbstractEntityManagerFactoryBean.java:400)
+	at org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean.afterPropertiesSet(LocalContainerEntityManagerFactoryBean.java:366)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1855)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1804)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:601)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:336)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:289)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:334)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:204)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:970)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:627)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350)
+	at com.unibuc.management.ManagementApplication.main(ManagementApplication.java:8)
+Caused by: com.microsoft.sqlserver.jdbc.SQLServerException: There is already an object named 'SERVICE_INSURANCE_COVERAGE' in the database.
+	at com.microsoft.sqlserver.jdbc.SQLServerException.makeFromDatabaseError(SQLServerException.java:270)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.getNextResult(SQLServerStatement.java:1735)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.doExecuteStatement(SQLServerStatement.java:929)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement$StmtExecCmd.doExecute(SQLServerStatement.java:823)
+	at com.microsoft.sqlserver.jdbc.TDSCommand.execute(IOBuffer.java:7745)
+	at com.microsoft.sqlserver.jdbc.SQLServerConnection.executeCommand(SQLServerConnection.java:4391)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.executeCommand(SQLServerStatement.java:276)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.executeStatement(SQLServerStatement.java:246)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.execute(SQLServerStatement.java:796)
+	at com.zaxxer.hikari.pool.ProxyStatement.execute(ProxyStatement.java:94)
+	at com.zaxxer.hikari.pool.HikariProxyStatement.execute(HikariProxyStatement.java)
+	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:80)
+	... 37 common frames omitted
+2026-07-07 13:48:50 [main] WARN  o.h.t.s.i.ExceptionHandlerLoggedImpl - GenerationTarget encountered exception accepting command : Error executing DDL "alter table SERVICE_INSURANCE_COVERAGE add constraint FK7xt37aoxpfsp9ne5guglik5y4 foreign key (ID_INSURANCE_PROVIDER) references INSURANCE_PROVIDER" via JDBC [There is already an object named 'FK7xt37aoxpfsp9ne5guglik5y4' in the database.]
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table SERVICE_INSURANCE_COVERAGE add constraint FK7xt37aoxpfsp9ne5guglik5y4 foreign key (ID_INSURANCE_PROVIDER) references INSURANCE_PROVIDER" via JDBC [There is already an object named 'FK7xt37aoxpfsp9ne5guglik5y4' in the database.]
+	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94)
+	at org.hibernate.tool.schema.internal.AbstractSchemaMigrator.applySqlString(AbstractSchemaMigrator.java:576)
+	at org.hibernate.tool.schema.internal.AbstractSchemaMigrator.applySqlStrings(AbstractSchemaMigrator.java:516)
+	at org.hibernate.tool.schema.internal.AbstractSchemaMigrator.applyForeignKeys(AbstractSchemaMigrator.java:448)
+	at org.hibernate.tool.schema.internal.AbstractSchemaMigrator.performMigration(AbstractSchemaMigrator.java:269)
+	at org.hibernate.tool.schema.internal.AbstractSchemaMigrator.doMigration(AbstractSchemaMigrator.java:112)
+	at org.hibernate.tool.schema.spi.SchemaManagementToolCoordinator.performDatabaseAction(SchemaManagementToolCoordinator.java:280)
+	at org.hibernate.tool.schema.spi.SchemaManagementToolCoordinator.lambda$process$5(SchemaManagementToolCoordinator.java:144)
+	at java.base/java.util.HashMap.forEach(HashMap.java:1421)
+	at org.hibernate.tool.schema.spi.SchemaManagementToolCoordinator.process(SchemaManagementToolCoordinator.java:141)
+	at org.hibernate.boot.internal.SessionFactoryObserverForSchemaExport.sessionFactoryCreated(SessionFactoryObserverForSchemaExport.java:37)
+	at org.hibernate.internal.SessionFactoryObserverChain.sessionFactoryCreated(SessionFactoryObserverChain.java:35)
+	at org.hibernate.internal.SessionFactoryImpl.<init>(SessionFactoryImpl.java:324)
+	at org.hibernate.boot.internal.SessionFactoryBuilderImpl.build(SessionFactoryBuilderImpl.java:463)
+	at org.hibernate.jpa.boot.internal.EntityManagerFactoryBuilderImpl.build(EntityManagerFactoryBuilderImpl.java:1506)
+	at org.springframework.orm.jpa.vendor.SpringHibernateJpaPersistenceProvider.createContainerEntityManagerFactory(SpringHibernateJpaPersistenceProvider.java:66)
+	at org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean.createNativeEntityManagerFactory(LocalContainerEntityManagerFactoryBean.java:390)
+	at org.springframework.orm.jpa.AbstractEntityManagerFactoryBean.buildNativeEntityManagerFactory(AbstractEntityManagerFactoryBean.java:419)
+	at org.springframework.orm.jpa.AbstractEntityManagerFactoryBean.afterPropertiesSet(AbstractEntityManagerFactoryBean.java:400)
+	at org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean.afterPropertiesSet(LocalContainerEntityManagerFactoryBean.java:366)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1855)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1804)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:601)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:336)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:289)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:334)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:204)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:970)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:627)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350)
+	at com.unibuc.management.ManagementApplication.main(ManagementApplication.java:8)
+Caused by: com.microsoft.sqlserver.jdbc.SQLServerException: There is already an object named 'FK7xt37aoxpfsp9ne5guglik5y4' in the database.
+	at com.microsoft.sqlserver.jdbc.SQLServerException.makeFromDatabaseError(SQLServerException.java:270)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.getNextResult(SQLServerStatement.java:1735)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.doExecuteStatement(SQLServerStatement.java:929)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement$StmtExecCmd.doExecute(SQLServerStatement.java:823)
+	at com.microsoft.sqlserver.jdbc.TDSCommand.execute(IOBuffer.java:7745)
+	at com.microsoft.sqlserver.jdbc.SQLServerConnection.executeCommand(SQLServerConnection.java:4391)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.executeCommand(SQLServerStatement.java:276)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.executeStatement(SQLServerStatement.java:246)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.execute(SQLServerStatement.java:796)
+	at com.zaxxer.hikari.pool.ProxyStatement.execute(ProxyStatement.java:94)
+	at com.zaxxer.hikari.pool.HikariProxyStatement.execute(HikariProxyStatement.java)
+	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:80)
+	... 36 common frames omitted
+2026-07-07 13:48:50 [main] WARN  o.h.t.s.i.ExceptionHandlerLoggedImpl - GenerationTarget encountered exception accepting command : Error executing DDL "alter table SERVICE_INSURANCE_COVERAGE add constraint FKdydyvu21ms1oskiv3bu4rg29h foreign key (ID_MEDICAL_SERVICE) references MEDICAL_SERVICE" via JDBC [There is already an object named 'FKdydyvu21ms1oskiv3bu4rg29h' in the database.]
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "alter table SERVICE_INSURANCE_COVERAGE add constraint FKdydyvu21ms1oskiv3bu4rg29h foreign key (ID_MEDICAL_SERVICE) references MEDICAL_SERVICE" via JDBC [There is already an object named 'FKdydyvu21ms1oskiv3bu4rg29h' in the database.]
+	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:94)
+	at org.hibernate.tool.schema.internal.AbstractSchemaMigrator.applySqlString(AbstractSchemaMigrator.java:576)
+	at org.hibernate.tool.schema.internal.AbstractSchemaMigrator.applySqlStrings(AbstractSchemaMigrator.java:516)
+	at org.hibernate.tool.schema.internal.AbstractSchemaMigrator.applyForeignKeys(AbstractSchemaMigrator.java:448)
+	at org.hibernate.tool.schema.internal.AbstractSchemaMigrator.performMigration(AbstractSchemaMigrator.java:269)
+	at org.hibernate.tool.schema.internal.AbstractSchemaMigrator.doMigration(AbstractSchemaMigrator.java:112)
+	at org.hibernate.tool.schema.spi.SchemaManagementToolCoordinator.performDatabaseAction(SchemaManagementToolCoordinator.java:280)
+	at org.hibernate.tool.schema.spi.SchemaManagementToolCoordinator.lambda$process$5(SchemaManagementToolCoordinator.java:144)
+	at java.base/java.util.HashMap.forEach(HashMap.java:1421)
+	at org.hibernate.tool.schema.spi.SchemaManagementToolCoordinator.process(SchemaManagementToolCoordinator.java:141)
+	at org.hibernate.boot.internal.SessionFactoryObserverForSchemaExport.sessionFactoryCreated(SessionFactoryObserverForSchemaExport.java:37)
+	at org.hibernate.internal.SessionFactoryObserverChain.sessionFactoryCreated(SessionFactoryObserverChain.java:35)
+	at org.hibernate.internal.SessionFactoryImpl.<init>(SessionFactoryImpl.java:324)
+	at org.hibernate.boot.internal.SessionFactoryBuilderImpl.build(SessionFactoryBuilderImpl.java:463)
+	at org.hibernate.jpa.boot.internal.EntityManagerFactoryBuilderImpl.build(EntityManagerFactoryBuilderImpl.java:1506)
+	at org.springframework.orm.jpa.vendor.SpringHibernateJpaPersistenceProvider.createContainerEntityManagerFactory(SpringHibernateJpaPersistenceProvider.java:66)
+	at org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean.createNativeEntityManagerFactory(LocalContainerEntityManagerFactoryBean.java:390)
+	at org.springframework.orm.jpa.AbstractEntityManagerFactoryBean.buildNativeEntityManagerFactory(AbstractEntityManagerFactoryBean.java:419)
+	at org.springframework.orm.jpa.AbstractEntityManagerFactoryBean.afterPropertiesSet(AbstractEntityManagerFactoryBean.java:400)
+	at org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean.afterPropertiesSet(LocalContainerEntityManagerFactoryBean.java:366)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1855)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1804)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:601)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:523)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:336)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:289)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:334)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:204)
+	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:970)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:627)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350)
+	at com.unibuc.management.ManagementApplication.main(ManagementApplication.java:8)
+Caused by: com.microsoft.sqlserver.jdbc.SQLServerException: There is already an object named 'FKdydyvu21ms1oskiv3bu4rg29h' in the database.
+	at com.microsoft.sqlserver.jdbc.SQLServerException.makeFromDatabaseError(SQLServerException.java:270)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.getNextResult(SQLServerStatement.java:1735)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.doExecuteStatement(SQLServerStatement.java:929)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement$StmtExecCmd.doExecute(SQLServerStatement.java:823)
+	at com.microsoft.sqlserver.jdbc.TDSCommand.execute(IOBuffer.java:7745)
+	at com.microsoft.sqlserver.jdbc.SQLServerConnection.executeCommand(SQLServerConnection.java:4391)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.executeCommand(SQLServerStatement.java:276)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.executeStatement(SQLServerStatement.java:246)
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.execute(SQLServerStatement.java:796)
+	at com.zaxxer.hikari.pool.ProxyStatement.execute(ProxyStatement.java:94)
+	at com.zaxxer.hikari.pool.HikariProxyStatement.execute(HikariProxyStatement.java)
+	at org.hibernate.tool.schema.internal.exec.GenerationTargetToDatabase.accept(GenerationTargetToDatabase.java:80)
+	... 36 common frames omitted
+2026-07-07 13:48:50 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-07-07 13:48:51 [main] INFO  o.s.d.j.r.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-07-07 13:48:54 [main] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-07-07 13:48:54 [main] WARN  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Found 2 UserDetailsService beans, with names [customUserDetailsService, userDetailsService]. Global Authentication Manager will not use a UserDetailsService for username/password login. Consider publishing a single UserDetailsService bean.
+2026-07-07 13:48:55 [main] WARN  o.s.b.a.t.ThymeleafAutoConfiguration$DefaultTemplateResolverConfiguration - Cannot find template location: classpath:/templates/ (please add some templates, check your Thymeleaf configuration, or set spring.thymeleaf.check-template-location=false)
+2026-07-07 13:48:55 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-07-07 13:48:55 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-07-07 13:48:56 [main] INFO  c.u.management.ManagementApplication - Started ManagementApplication in 19.127 seconds (process running for 19.801)
+2026-07-07 13:51:29 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-07-07 13:51:29 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-07-07 13:51:29 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-07-07 13:51:34 [http-nio-8080-exec-2] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda AuthService.login() cu argumentele: [LoginRequest(username=Ioana, password=ioana123), SecurityContextHolderAwareRequestWrapper[ org.springframework.security.web.header.HeaderWriterFilter$HeaderWriterRequest@5267ae39], org.springframework.web.context.request.async.StandardServletAsyncWebRequest$LifecycleHttpServletResponse@60b23634]
+2026-07-07 13:51:34 [http-nio-8080-exec-2] DEBUG c.u.management.services.AuthService - Autentificare pentru utilizatorul 'Ioana'.
+2026-07-07 13:51:35 [http-nio-8080-exec-2] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda DoctorService.getDoctorByUsername() cu argumentele: [Ioana]
+2026-07-07 13:51:35 [http-nio-8080-exec-2] DEBUG c.u.m.services.DoctorService - Căutare doctor după username-ul de autentificare: Ioana
+2026-07-07 13:51:35 [http-nio-8080-exec-2] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda DoctorService.getDoctorByUsername() s-a finalizat cu succes. Rezultat returnat: Doctor(id=1, name=Florea Ioana, office=Cabinet 505, numberOfPTOdays=14)
+2026-07-07 13:51:35 [http-nio-8080-exec-2] INFO  c.u.management.services.AuthService - Utilizatorul 'Ioana' s-a autentificat cu succes.
+2026-07-07 13:51:35 [http-nio-8080-exec-2] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda AuthService.login() s-a finalizat cu succes. Rezultat returnat: {profileId=1, roles=[ROLE_DOCTOR], username=Ioana, message=Login successful}
+2026-07-07 13:51:37 [http-nio-8080-exec-3] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda PaymentService.getAllPayments() cu argumentele: []
+2026-07-07 13:51:37 [http-nio-8080-exec-3] DEBUG c.u.m.services.PaymentService - Se preia lista completă a plăților.
+2026-07-07 13:51:38 [http-nio-8080-exec-3] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda PaymentService.getAllPayments() s-a finalizat cu succes. Rezultat returnat: [com.unibuc.management.dto.response.PaymentResponseDTO@46e830f5, com.unibuc.management.dto.response.PaymentResponseDTO@720ec8e, com.unibuc.management.dto.response.PaymentResponseDTO@4cfabfe7, com.unibuc.management.dto.response.PaymentResponseDTO@79640453, com.unibuc.management.dto.response.PaymentResponseDTO@7e8cec12, com.unibuc.management.dto.response.PaymentResponseDTO@7ec83bd1, com.unibuc.management.dto.response.PaymentResponseDTO@67d4b668, com.unibuc.management.dto.response.PaymentResponseDTO@3e4b605d, com.unibuc.management.dto.response.PaymentResponseDTO@27bee7fa, com.unibuc.management.dto.response.PaymentResponseDTO@1897566f, com.unibuc.management.dto.response.PaymentResponseDTO@5a32d4e3, com.unibuc.management.dto.response.PaymentResponseDTO@3f9e1e70]
+2026-07-07 13:51:38 [http-nio-8080-exec-4] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda PaymentService.getAllPayments() cu argumentele: []
+2026-07-07 13:51:38 [http-nio-8080-exec-4] DEBUG c.u.m.services.PaymentService - Se preia lista completă a plăților.
+2026-07-07 13:51:38 [http-nio-8080-exec-4] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda PaymentService.getAllPayments() s-a finalizat cu succes. Rezultat returnat: [com.unibuc.management.dto.response.PaymentResponseDTO@3e90e172, com.unibuc.management.dto.response.PaymentResponseDTO@554c8090, com.unibuc.management.dto.response.PaymentResponseDTO@1d995d68, com.unibuc.management.dto.response.PaymentResponseDTO@605bc4eb, com.unibuc.management.dto.response.PaymentResponseDTO@597922e3, com.unibuc.management.dto.response.PaymentResponseDTO@6880715c, com.unibuc.management.dto.response.PaymentResponseDTO@3f251339, com.unibuc.management.dto.response.PaymentResponseDTO@1e7e4aa, com.unibuc.management.dto.response.PaymentResponseDTO@1199b04f, com.unibuc.management.dto.response.PaymentResponseDTO@7af829b1, com.unibuc.management.dto.response.PaymentResponseDTO@6dd3410c, com.unibuc.management.dto.response.PaymentResponseDTO@532f2aa8]
+2026-07-07 13:51:47 [http-nio-8080-exec-5] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda PatientService.getAllPatientsPaged() cu argumentele: [Page request [number: 0, size 5, sort: name: ASC]]
+2026-07-07 13:51:47 [http-nio-8080-exec-5] DEBUG c.u.m.services.PatientService - Se preia lista paginată a pacienților.
+2026-07-07 13:51:48 [http-nio-8080-exec-5] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda PatientService.getAllPatientsPaged() s-a finalizat cu succes. Rezultat returnat: Page 1 of 1 containing com.unibuc.management.dto.response.PatientResponseDTO instances
+2026-07-07 13:51:48 [http-nio-8080-exec-5] WARN  o.s.d.w.c.SpringDataJacksonConfiguration$PageModule$WarningLoggingModifier - Serializing PageImpl instances as-is is not supported, meaning that there is no guarantee about the stability of the resulting JSON structure!
+	For a stable JSON structure, please use Spring Data's PagedModel (globally via @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO))
+	or Spring HATEOAS and Spring Data's PagedResourcesAssembler as documented in https://docs.spring.io/spring-data/commons/reference/repositories/core-extensions.html#core.web.pageables.
+
+2026-07-07 13:51:48 [http-nio-8080-exec-6] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda PatientService.getAllPatientsPaged() cu argumentele: [Page request [number: 0, size 5, sort: name: ASC]]
+2026-07-07 13:51:48 [http-nio-8080-exec-6] DEBUG c.u.m.services.PatientService - Se preia lista paginată a pacienților.
+2026-07-07 13:51:48 [http-nio-8080-exec-6] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda PatientService.getAllPatientsPaged() s-a finalizat cu succes. Rezultat returnat: Page 1 of 1 containing com.unibuc.management.dto.response.PatientResponseDTO instances
+2026-07-07 13:51:57 [http-nio-8080-exec-7] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda DoctorService.getDoctorsPaged() cu argumentele: [Page request [number: 0, size 5, sort: name: ASC]]
+2026-07-07 13:51:57 [http-nio-8080-exec-7] DEBUG c.u.m.services.DoctorService - Se solicită lista paginată de doctori folosind structura Pageable.
+2026-07-07 13:51:57 [http-nio-8080-exec-7] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda DoctorService.getDoctorsPaged() s-a finalizat cu succes. Rezultat returnat: Page 1 of 2 containing com.unibuc.management.dto.response.DoctorResponseDTO instances
+2026-07-07 13:51:57 [http-nio-8080-exec-8] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda DoctorService.getDoctorsPaged() cu argumentele: [Page request [number: 0, size 5, sort: name: ASC]]
+2026-07-07 13:51:57 [http-nio-8080-exec-8] DEBUG c.u.m.services.DoctorService - Se solicită lista paginată de doctori folosind structura Pageable.
+2026-07-07 13:51:57 [http-nio-8080-exec-8] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda DoctorService.getDoctorsPaged() s-a finalizat cu succes. Rezultat returnat: Page 1 of 2 containing com.unibuc.management.dto.response.DoctorResponseDTO instances
+2026-07-07 13:52:04 [http-nio-8080-exec-9] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda MedicalServiceService.getAllServices() cu argumentele: []
+2026-07-07 13:52:04 [http-nio-8080-exec-9] DEBUG c.u.m.services.MedicalServiceService - Se preia lista completă a serviciilor medicale.
+2026-07-07 13:52:04 [http-nio-8080-exec-9] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda MedicalServiceService.getAllServices() s-a finalizat cu succes. Rezultat returnat: [com.unibuc.management.dto.response.MedicalServiceResponseDTO@31514706, com.unibuc.management.dto.response.MedicalServiceResponseDTO@4533e6d4, com.unibuc.management.dto.response.MedicalServiceResponseDTO@63d00888]
+2026-07-07 13:52:11 [http-nio-8080-exec-1] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda MedicalServiceService.getAllServices() cu argumentele: []
+2026-07-07 13:52:11 [http-nio-8080-exec-1] DEBUG c.u.m.services.MedicalServiceService - Se preia lista completă a serviciilor medicale.
+2026-07-07 13:52:11 [http-nio-8080-exec-10] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda AppointmentService.getAppointmentsByDoctorId() cu argumentele: [1, Page request [number: 0, size 5, sort: appointmentFrom: ASC], UsernamePasswordAuthenticationToken [Principal=com.unibuc.management.security.CustomUserDetails [Username=Ioana, Password=[PROTECTED], Enabled=true, AccountNonExpired=true, CredentialsNonExpired=true, AccountNonLocked=true, Granted Authorities=[ROLE_DOCTOR]], Credentials=[PROTECTED], Authenticated=true, Details=null, Granted Authorities=[ROLE_DOCTOR]]]
+2026-07-07 13:52:11 [http-nio-8080-exec-10] DEBUG c.u.m.services.AppointmentService - Se solicită programările medicului ID 1
+2026-07-07 13:52:11 [http-nio-8080-exec-10] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda DoctorService.getDoctorByUsername() cu argumentele: [Ioana]
+2026-07-07 13:52:11 [http-nio-8080-exec-10] DEBUG c.u.m.services.DoctorService - Căutare doctor după username-ul de autentificare: Ioana
+2026-07-07 13:52:11 [http-nio-8080-exec-10] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda DoctorService.getDoctorByUsername() s-a finalizat cu succes. Rezultat returnat: Doctor(id=1, name=Florea Ioana, office=Cabinet 505, numberOfPTOdays=14)
+2026-07-07 13:52:11 [http-nio-8080-exec-1] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda MedicalServiceService.getAllServices() s-a finalizat cu succes. Rezultat returnat: [com.unibuc.management.dto.response.MedicalServiceResponseDTO@5d6f35b, com.unibuc.management.dto.response.MedicalServiceResponseDTO@f1f7a18, com.unibuc.management.dto.response.MedicalServiceResponseDTO@10cccff2]
+2026-07-07 13:52:11 [http-nio-8080-exec-2] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda MedicalServiceService.getAllServices() cu argumentele: []
+2026-07-07 13:52:11 [http-nio-8080-exec-2] DEBUG c.u.m.services.MedicalServiceService - Se preia lista completă a serviciilor medicale.
+2026-07-07 13:52:11 [http-nio-8080-exec-2] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda MedicalServiceService.getAllServices() s-a finalizat cu succes. Rezultat returnat: [com.unibuc.management.dto.response.MedicalServiceResponseDTO@5ffab98c, com.unibuc.management.dto.response.MedicalServiceResponseDTO@d5a4f4d, com.unibuc.management.dto.response.MedicalServiceResponseDTO@2a465e29]
+2026-07-07 13:52:11 [http-nio-8080-exec-10] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda AppointmentService.getAppointmentsByDoctorId() s-a finalizat cu succes. Rezultat returnat: Page 1 of 3 containing com.unibuc.management.dto.response.AppointmentResponseDTO instances
+2026-07-07 13:52:11 [http-nio-8080-exec-3] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda AppointmentService.getAppointmentsByDoctorId() cu argumentele: [1, Page request [number: 0, size 5, sort: appointmentFrom: ASC], UsernamePasswordAuthenticationToken [Principal=com.unibuc.management.security.CustomUserDetails [Username=Ioana, Password=[PROTECTED], Enabled=true, AccountNonExpired=true, CredentialsNonExpired=true, AccountNonLocked=true, Granted Authorities=[ROLE_DOCTOR]], Credentials=[PROTECTED], Authenticated=true, Details=null, Granted Authorities=[ROLE_DOCTOR]]]
+2026-07-07 13:52:11 [http-nio-8080-exec-3] DEBUG c.u.m.services.AppointmentService - Se solicită programările medicului ID 1
+2026-07-07 13:52:11 [http-nio-8080-exec-3] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda DoctorService.getDoctorByUsername() cu argumentele: [Ioana]
+2026-07-07 13:52:11 [http-nio-8080-exec-3] DEBUG c.u.m.services.DoctorService - Căutare doctor după username-ul de autentificare: Ioana
+2026-07-07 13:52:11 [http-nio-8080-exec-3] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda DoctorService.getDoctorByUsername() s-a finalizat cu succes. Rezultat returnat: Doctor(id=1, name=Florea Ioana, office=Cabinet 505, numberOfPTOdays=14)
+2026-07-07 13:52:11 [http-nio-8080-exec-3] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda AppointmentService.getAppointmentsByDoctorId() s-a finalizat cu succes. Rezultat returnat: Page 1 of 3 containing com.unibuc.management.dto.response.AppointmentResponseDTO instances
+2026-07-07 13:52:33 [http-nio-8080-exec-4] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda MedicalServiceService.getAllServices() cu argumentele: []
+2026-07-07 13:52:33 [http-nio-8080-exec-4] DEBUG c.u.m.services.MedicalServiceService - Se preia lista completă a serviciilor medicale.
+2026-07-07 13:52:33 [http-nio-8080-exec-4] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda MedicalServiceService.getAllServices() s-a finalizat cu succes. Rezultat returnat: [com.unibuc.management.dto.response.MedicalServiceResponseDTO@747ad466, com.unibuc.management.dto.response.MedicalServiceResponseDTO@25e83c1f, com.unibuc.management.dto.response.MedicalServiceResponseDTO@327bb6e5]
+2026-07-07 13:52:33 [http-nio-8080-exec-5] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda InsuranceProviderService.getAllInsuranceProviders() cu argumentele: []
+2026-07-07 13:52:33 [http-nio-8080-exec-5] DEBUG c.u.m.s.InsuranceProviderService - Se preia lista completă a asiguratorilor.
+2026-07-07 13:52:33 [http-nio-8080-exec-6] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda MedicalServiceService.getAllServices() cu argumentele: []
+2026-07-07 13:52:33 [http-nio-8080-exec-6] DEBUG c.u.m.services.MedicalServiceService - Se preia lista completă a serviciilor medicale.
+2026-07-07 13:52:33 [http-nio-8080-exec-5] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda InsuranceProviderService.getAllInsuranceProviders() s-a finalizat cu succes. Rezultat returnat: [com.unibuc.management.dto.response.InsuranceProviderResponseDTO@53f80556, com.unibuc.management.dto.response.InsuranceProviderResponseDTO@6a7b3e0a]
+2026-07-07 13:52:33 [http-nio-8080-exec-6] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda MedicalServiceService.getAllServices() s-a finalizat cu succes. Rezultat returnat: [com.unibuc.management.dto.response.MedicalServiceResponseDTO@2e482145, com.unibuc.management.dto.response.MedicalServiceResponseDTO@67756569, com.unibuc.management.dto.response.MedicalServiceResponseDTO@4bd67192]
+2026-07-07 13:52:33 [http-nio-8080-exec-7] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda InsuranceProviderService.getAllInsuranceProviders() cu argumentele: []
+2026-07-07 13:52:33 [http-nio-8080-exec-7] DEBUG c.u.m.s.InsuranceProviderService - Se preia lista completă a asiguratorilor.
+2026-07-07 13:52:33 [http-nio-8080-exec-7] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda InsuranceProviderService.getAllInsuranceProviders() s-a finalizat cu succes. Rezultat returnat: [com.unibuc.management.dto.response.InsuranceProviderResponseDTO@40bdf406, com.unibuc.management.dto.response.InsuranceProviderResponseDTO@44863ca3]
+2026-07-07 13:56:28 [http-nio-8080-exec-8] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda PatientService.getAllPatientsPaged() cu argumentele: [Page request [number: 0, size 5, sort: name: ASC]]
+2026-07-07 13:56:28 [http-nio-8080-exec-8] DEBUG c.u.m.services.PatientService - Se preia lista paginată a pacienților.
+2026-07-07 13:56:28 [http-nio-8080-exec-8] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda PatientService.getAllPatientsPaged() s-a finalizat cu succes. Rezultat returnat: Page 1 of 1 containing com.unibuc.management.dto.response.PatientResponseDTO instances
+2026-07-07 13:56:28 [http-nio-8080-exec-9] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda PatientService.getAllPatientsPaged() cu argumentele: [Page request [number: 0, size 5, sort: name: ASC]]
+2026-07-07 13:56:28 [http-nio-8080-exec-9] DEBUG c.u.m.services.PatientService - Se preia lista paginată a pacienților.
+2026-07-07 13:56:28 [http-nio-8080-exec-9] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda PatientService.getAllPatientsPaged() s-a finalizat cu succes. Rezultat returnat: Page 1 of 1 containing com.unibuc.management.dto.response.PatientResponseDTO instances
+2026-07-07 13:56:33 [http-nio-8080-exec-1] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda PatientService.deletePatient() cu argumentele: [6]
+2026-07-07 13:56:33 [http-nio-8080-exec-1] DEBUG c.u.m.services.PatientService - Se inițiază procedura de eliminare pentru pacientul cu ID-ul: 6
+2026-07-07 13:56:33 [http-nio-8080-exec-1] DEBUG c.u.m.services.PatientService - Căutare pacient după ID: 6
+2026-07-07 13:56:33 [http-nio-8080-exec-1] INFO  c.u.m.services.PatientService - Entitatea Patient cu ID-ul 6 a fost ștearsă.
+2026-07-07 13:56:33 [http-nio-8080-exec-1] WARN  c.u.m.services.PatientService - Atenție: Pacientul cu ID-ul 6 nu avea un cont de User asociat.
+2026-07-07 13:56:33 [http-nio-8080-exec-1] INFO  c.u.m.services.PatientService - Procedura de ștergere completă s-a finalizat cu succes pentru pacientul ID 6.
+2026-07-07 13:56:33 [http-nio-8080-exec-1] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda PatientService.deletePatient() s-a finalizat cu succes. Rezultat returnat: null
+2026-07-07 13:56:33 [http-nio-8080-exec-2] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda PatientService.getAllPatientsPaged() cu argumentele: [Page request [number: 0, size 5, sort: name: ASC]]
+2026-07-07 13:56:33 [http-nio-8080-exec-2] DEBUG c.u.m.services.PatientService - Se preia lista paginată a pacienților.
+2026-07-07 13:56:33 [http-nio-8080-exec-2] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda PatientService.getAllPatientsPaged() s-a finalizat cu succes. Rezultat returnat: Page 1 of 1 containing com.unibuc.management.dto.response.PatientResponseDTO instances
+2026-07-07 13:56:38 [http-nio-8080-exec-10] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda DoctorScheduleService.getDoctorLeaves() cu argumentele: [1]
+2026-07-07 13:56:38 [http-nio-8080-exec-10] DEBUG c.u.m.services.DoctorScheduleService - Se preia istoricul complet de concedii (PTO) pentru doctorul ID: 1
+2026-07-07 13:56:38 [http-nio-8080-exec-10] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda DoctorScheduleService.getDoctorLeaves() s-a finalizat cu succes. Rezultat returnat: [com.unibuc.management.dto.response.PaidTimeOffResponseDTO@8c94bcd, com.unibuc.management.dto.response.PaidTimeOffResponseDTO@1f7c5a1b, com.unibuc.management.dto.response.PaidTimeOffResponseDTO@674cd6e8]
+2026-07-07 13:56:38 [http-nio-8080-exec-3] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda DoctorScheduleService.getDoctorLeaves() cu argumentele: [1]
+2026-07-07 13:56:38 [http-nio-8080-exec-3] DEBUG c.u.m.services.DoctorScheduleService - Se preia istoricul complet de concedii (PTO) pentru doctorul ID: 1
+2026-07-07 13:56:38 [http-nio-8080-exec-3] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda DoctorScheduleService.getDoctorLeaves() s-a finalizat cu succes. Rezultat returnat: [com.unibuc.management.dto.response.PaidTimeOffResponseDTO@64d26f12, com.unibuc.management.dto.response.PaidTimeOffResponseDTO@5884837f, com.unibuc.management.dto.response.PaidTimeOffResponseDTO@cba507c]
+2026-07-07 13:56:56 [http-nio-8080-exec-4] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda DoctorScheduleService.schedulePTO() cu argumentele: [PtoRequestDTO(doctorId=1, startDate=2026-11-14, endDate=2026-11-18), Ioana]
+2026-07-07 13:56:56 [http-nio-8080-exec-4] DEBUG c.u.m.services.DoctorScheduleService - Solicitare concediu pentru doctorul ID 1 de către utilizatorul Ioana.
+2026-07-07 13:56:56 [http-nio-8080-exec-4] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda DoctorService.getDoctorByUsername() cu argumentele: [Ioana]
+2026-07-07 13:56:56 [http-nio-8080-exec-4] DEBUG c.u.m.services.DoctorService - Căutare doctor după username-ul de autentificare: Ioana
+2026-07-07 13:56:56 [http-nio-8080-exec-4] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda DoctorService.getDoctorByUsername() s-a finalizat cu succes. Rezultat returnat: Doctor(id=1, name=Florea Ioana, office=Cabinet 505, numberOfPTOdays=14)
+2026-07-07 13:56:56 [http-nio-8080-exec-4] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda DoctorService.getDoctorById() cu argumentele: [1]
+2026-07-07 13:56:56 [http-nio-8080-exec-4] DEBUG c.u.m.services.DoctorService - Căutare doctor după ID: 1
+2026-07-07 13:56:56 [http-nio-8080-exec-4] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda DoctorService.getDoctorById() s-a finalizat cu succes. Rezultat returnat: Doctor(id=1, name=Florea Ioana, office=Cabinet 505, numberOfPTOdays=14)
+2026-07-07 13:56:56 [http-nio-8080-exec-4] INFO  c.u.m.services.DoctorScheduleService - Concediu creat pentru doctorul ID 1. PTO rămas: 9 zile.
+2026-07-07 13:56:56 [http-nio-8080-exec-4] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda DoctorScheduleService.schedulePTO() s-a finalizat cu succes. Rezultat returnat: null
+2026-07-07 13:56:56 [http-nio-8080-exec-5] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [START]: Se execută metoda DoctorScheduleService.getDoctorLeaves() cu argumentele: [1]
+2026-07-07 13:56:56 [http-nio-8080-exec-5] DEBUG c.u.m.services.DoctorScheduleService - Se preia istoricul complet de concedii (PTO) pentru doctorul ID: 1
+2026-07-07 13:56:56 [http-nio-8080-exec-5] DEBUG c.u.management.aspects.LoggingAspect - AOP-LOG [SUCCESS]: Metoda DoctorScheduleService.getDoctorLeaves() s-a finalizat cu succes. Rezultat returnat: [com.unibuc.management.dto.response.PaidTimeOffResponseDTO@4e835245, com.unibuc.management.dto.response.PaidTimeOffResponseDTO@75bb03d3, com.unibuc.management.dto.response.PaidTimeOffResponseDTO@386da1cb, com.unibuc.management.dto.response.PaidTimeOffResponseDTO@70b06800]
+2026-07-07 19:44:43 [HikariPool-1 housekeeper] WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=3h24s439ms215µs100ns).
+2026-07-07 22:33:43 [HikariPool-1 housekeeper] WARN  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=2h49m14s7ms268µs100ns).
+2026-07-07 22:59:26 [SpringApplicationShutdownHook] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-07-07 22:59:26 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-07-07 22:59:26 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-07-07 22:59:27 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-07-07 22:59:27 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.

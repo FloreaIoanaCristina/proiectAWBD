@@ -1,0 +1,3 @@
+info:
+  service: medical-service
+  managed-by: config-server

@@ -1,0 +1,3 @@
+info:
+  service: payment-service
+  managed-by: config-server
