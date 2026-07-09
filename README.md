@@ -1,5 +1,7 @@
 # proiectAWBD
 Sistem de Programari Medicale
+Este o platformă pentru gestiunea unei clinici mici private medicale care ajuta la creearea programarilor, vizualizarea informatiilor medicilor si pacientilor,
+si procesarea teoretica a platilor.
 
 **Cerințe funcționale**
 1. Sistemul trebuie să permită înregistrarea și gestionarea profilurilor de pacient și de medic.
@@ -47,53 +49,37 @@ Diagrama conceptuala
 
 Monolitul a fost împărțit în 3 microservicii independente, în spatele unui Config Server, unui Eureka discovery server și unui Spring Cloud Gateway.
 
-```
-Frontend (Vite :5173)
-        │  /api, /auth  (cookies de sesiune + CSRF)
-        ▼
-api-gateway :8080  ──(lb://)──►  user-service    :8081   ──►  DB Medical_User
-        │                       medical-service  :8082   ──►  DB Medical_Medical
-        │                       payment-service  :8083   ──►  DB Medical_Payment
-        │
-        ├── discovery-server :8761   (Eureka: toate serviciile se înregistrează)
-        ├── config-server    :8888   (config centralizat + refresh dinamic)
-        └── Redis :6379  (sesiune partajată + rate limiting)
-
-Prometheus :9090  ──scrape /actuator/prometheus──►  toate serviciile
-Grafana    :3000  ──►  Prometheus
-```
-
 ### Împărțirea responsabilităților
-- **user-service** – autentificare (sesiune + BCrypt + remember-me + CSRF), utilizatori și roluri (`USER`/`PATIENT`, `DOCTOR`).
+- **user-service** – autentificare (sesiune + BCrypt + remember-me + CSRF), utilizatori și roluri (`PATIENT`, `DOCTOR`).
 - **medical-service** – entitățile clinice principale: `Doctor`, `Patient`, `MedicalService`, `Appointment`, `PaidTimeOff`, `InsuranceProvider`, `ServiceCoverage` (relații JPA de toate tipurile).
 - **payment-service** – generarea și gestionarea plăților.
 
 Legăturile JPA inter-serviciu au fost înlocuite cu coloane de ID (`Doctor/Patient.userId`, `Payment.appointmentId/patientId`), iar comunicarea reală se face prin **Feign**:
-- `user-service → medical-service`: creare/căutare/ștergere profil.
-- `medical-service → payment-service`: creare plată pentru o programare.
-- `payment-service → medical-service`: `pricing-info` + `summary` pentru o programare.
-- `medical-service → user-service`: ștergere cont intern.
+- `user-service ->  medical-service`: creare/căutare/ștergere profil.
+- `medical-service ->  payment-service`: creare plată pentru o programare.
+- `payment-service ->  medical-service`: `pricing-info` + `summary` pentru o programare.
+- `medical-service ->  user-service`: ștergere cont intern.
 
 ### Securitate hibridă (II.6)
-- **Browser → gateway**: sesiune HTTP partajată prin **Spring Session Redis** + CSRF.
-- **Serviciu → serviciu (Feign)**: **JWT** semnat HMAC, emis dintr-un `RequestInterceptor` pe baza `SecurityContext`-ului și validat de un `SecurityFilterChain` `@Order(1)` pe `/api/internal/**` (stateless).
+- **Browser -> gateway**: sesiune HTTP partajată prin **Spring Session Redis** + CSRF.
+- **Serviciu -> serviciu (Feign)**: **JWT** semnat HMAC, emis dintr-un `RequestInterceptor` pe baza `SecurityContext`-ului și validat de un `SecurityFilterChain` `@Order(1)` pe `/api/internal/**` (stateless).
 
 ### Cerințe opționale acoperite
-- **II.1 Config centralizat** – `config-server` (profil `native`), servicii client cu `spring.config.import`, `@RefreshScope` demo pe `GET /auth/info` + `POST /actuator/refresh`.
-- **II.2 Service discovery + Feign** – Eureka + OpenFeign.
-- **II.3 Load balancing** – Spring Cloud LoadBalancer (`lb://`); rulează 2 instanțe de `medical-service` (vezi mai jos).
-- **II.4 API Gateway** – routing centralizat, `RequestRateLimiter` pe Redis + `GlobalFilter` de correlation-id/logging.
-- **II.5 Monitorizare** – Actuator (`health,info,metrics,prometheus`) + Prometheus + Grafana (`docker-compose.yml`).
-- **II.7 Resilience4j** – circuit breaker + retry + fallback pe apelurile Feign medical↔payment.
+- **1 Config centralizat** – `config-server` (profil `native`), servicii client cu `spring.config.import`, `@RefreshScope` demo pe `GET /auth/info` + `POST /actuator/refresh`.
+- **2 Service discovery + Feign** – Eureka + OpenFeign.
+- **3 Load balancing** – Spring Cloud LoadBalancer (`lb://`); rulează 2 instanțe de `medical-service` (vezi mai jos).
+- **4 API Gateway** – routing centralizat, `RequestRateLimiter` pe Redis + `GlobalFilter` de correlation-id/logging.
+- **5 Monitorizare** – Actuator (`health,info,metrics,prometheus`) + Prometheus + Grafana (`docker-compose.yml`).
+- **6 Resilience4j** – circuit breaker + retry + fallback pe apelurile Feign medical↔payment.
 
-## Rulare
+## Instructiuni de Rulare
 
 ### 1. Infrastructură
 ```bash
 # Redis + Prometheus + Grafana
 docker-compose up -d
 
-# Bazele de date pe SQL Server (localhost\SQLEXPRESS01)
+# Bazele de date pe SQL Server (localhost\SQLEXPRESS01) create manual
 #   Medical_User, Medical_Medical, Medical_Payment
 ```
 
@@ -136,3 +122,12 @@ cd payment-service && mvn test
 - Resilience: oprește `payment-service`, creează o programare → fallback (plată `UNAVAILABLE`) în loc de eroare
 - Flux end-to-end: register → login → create appointment → payment, prin gateway
 
+## Screenshots
+![img_1.png](img_1.png)
+
+![img_2.png](img_2.png)
+
+![img_3.png](img_3.png)
+
+
+Contributia: 100% Florea Ioana-Cristina

@@ -12,7 +12,14 @@ export default function MedicalServicesPage() {
   const [selectedService, setSelectedService] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  const isDoctor = true; 
+  const savedUser = localStorage.getItem("med_user");
+  const user = savedUser ? JSON.parse(savedUser) : null;
+
+  const userRole = user?.role ?? null;
+
+  const isDoctor =
+      userRole === "ROLE_DOCTOR" ||
+      userRole === "DOCTOR";
 
   const [showUpsertModal, setShowUpsertModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);

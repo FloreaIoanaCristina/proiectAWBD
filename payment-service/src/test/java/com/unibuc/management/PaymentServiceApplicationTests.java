@@ -1,4 +1,4 @@
-package com.unibuc.management.payment_service;
+package com.unibuc.management;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
